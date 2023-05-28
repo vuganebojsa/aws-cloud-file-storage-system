@@ -8,7 +8,7 @@ def get_200_response(data):
             'Access-Control-Allow-Origin':'*'
         },
         'statusCode': 200,
-        'body': json.dump(data)
+        'body': json.loads(data)
     }
 def get_400_response(data):
     return {
@@ -18,7 +18,7 @@ def get_400_response(data):
             'Access-Control-Allow-Origin':'*'
         },
         'statusCode': 400,
-        'body': json.dump(data)
+        'body': json.loads(data)
     }
 
 def get_401_response(data):
@@ -29,7 +29,7 @@ def get_401_response(data):
             'Access-Control-Allow-Origin':'*'
         },
         'statusCode': 401,
-        'body': json.dump(data)
+        'body': json.loads(data)
     }
 def get_404_response(data):
     return {
@@ -39,7 +39,7 @@ def get_404_response(data):
             'Access-Control-Allow-Origin':'*'
         },
         'statusCode': 404,
-        'body': json.dump(data)
+        'body': json.loads(data)
     }
 def get_500_response(data):
     return {
@@ -49,5 +49,5 @@ def get_500_response(data):
             'Access-Control-Allow-Origin':'*'
         },
         'statusCode': 500,
-        'body': json.dump(data)
+        'body': json.loads(data)
     }
