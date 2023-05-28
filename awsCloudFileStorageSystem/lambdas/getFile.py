@@ -8,11 +8,15 @@ def get_file(event, context):
     print(event)
     bucket_name = event['pathParameters']['bucket']
     file_name = event['pathParameters']['filename']
+
     try:
-        my_file = s3.get_object(Bucket=bucket_name, Key=file_name)
-        content = my_file['Body'].read()
-    except Exception as e:
+        s3.head_object(Bucket=bucket_name, Key= file_name)
+    except Exception:
         return get_404_response('{"message":"File not found"}')
+    
+    my_file = s3.get_object(Bucket=bucket_name, Key=file_name)
+    content = my_file['Body'].read()
+    
     
     if content is not None:
          return {

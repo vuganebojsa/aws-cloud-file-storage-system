@@ -29,6 +29,7 @@ provider:
     - Effect: Allow
       Action:
         - s3:GetObject
+        - s3:PutObject
       Resource:
         - arn:aws:s3:::bivuja-bucket/*
 
@@ -74,7 +75,15 @@ functions:
           path: get-file/{bucket}/{filename}
           method: GET
           cors: true
-
+  postFile:
+    handler: lambdas/postFile.post_file
+    events:
+      - http:
+          path: post-file/{bucket}/{filename}
+          method: POST
+          cors: true
+          request:
+            passThrought: WHEN_NO_MATCH
 resources:
   Resources:
     BivujaBucket:
