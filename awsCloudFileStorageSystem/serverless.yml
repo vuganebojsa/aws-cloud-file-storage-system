@@ -29,6 +29,13 @@ functions:
           path: get-file/{bucket}/{filename}
           method: GET
           cors: true
+  getFiles:
+    handler: lambdas/getFiles.get_files
+    events: 
+      - http:
+          path: get-files/{bucket}/{username}
+          method: GET
+          cors: true 
   postFile:
     handler: lambdas/postFile.post_file
     events:
@@ -54,7 +61,7 @@ functions:
   #         path: user/login
   #         method: post
   #         cors: true
-
+  
   signupUser:
     handler: lambdas/register.register_user
     events:

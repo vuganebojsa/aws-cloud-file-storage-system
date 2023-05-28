@@ -8,7 +8,7 @@ def get_file(event, context):
     print(event)
     bucket_name = event['pathParameters']['bucket']
     file_name = event['pathParameters']['filename']
-
+    
     try:
         s3.head_object(Bucket=bucket_name, Key= file_name)
     except Exception:
