@@ -61,8 +61,14 @@ provider:
 #    - include-me-dir/**
 
 functions:
-  hello:
-    handler: handler.hello
+  getFile:
+    handler: lambdas/getFile.get_file
+    events: 
+      - http:
+          path: get-file/{bucket}/{filename}
+          method: GET
+          cors: true
+
 resources:
   Resources:
     BivujaBucket:
