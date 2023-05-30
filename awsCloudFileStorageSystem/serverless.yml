@@ -36,6 +36,13 @@ functions:
           path: get-files/{bucket}/{username}
           method: GET
           cors: true 
+  getFolders:
+    handler: lambdas/getFolders.get_folders
+    events: 
+      - http:
+          path: get-folders/{username}
+          method: GET
+          cors: true 
   postFile:
     handler: lambdas/postFile.post_file
     events:
@@ -50,6 +57,15 @@ functions:
     events:
       - http:
           path: post-file-lambda/
+          method: POST
+          cors: true
+          request:
+            passThrought: WHEN_NO_MATCH
+  postFolderLambda:
+    handler: lambdas/postFolder.post_folder_dynamo
+    events:
+      - http:
+          path: post-folder-lambda/
           method: POST
           cors: true
           request:
@@ -106,6 +122,20 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 5
           WriteCapacityUnits: 5
+    DynamoDbFolderTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: folder-bivuja-table  # Replace with your DynamoDB table name
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+      
     UserPool:
       Type: AWS::Cognito::UserPool
       Properties:
