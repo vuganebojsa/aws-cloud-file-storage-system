@@ -61,6 +61,15 @@ functions:
           cors: true
           request:
             passThrought: WHEN_NO_MATCH
+  postFileToFolder:
+    handler: lambdas/postFileToFolder.post_file_to_folder
+    events:
+      - http:
+          path: post-file-to-folder/{bucket}/{filename}
+          method: POST
+          cors: true
+          request:
+            passThrought: WHEN_NO_MATCH
   postFileLambda:
     handler: lambdas/postFileDynamo.post_file_dynamo
     events:
