@@ -56,15 +56,19 @@ functions:
     handler: lambdas/deleteFile.delete_file
     events: 
       - http:
-          path: delete_file/{bucket}/{filename}
+          path: delete-file-s3/{bucket}/{filename}
           method: DELETE
+          request:
+            passThrought: WHEN_NO_MATCH
           cors: true
   deleteFileDynamo:
     handler: lambdas/deleteFileDynamo.delete_file_dynamo
     events: 
       - http:
-          path: delete_file/{bucket}/{username}/{filename}/{foldername}
+          path: delete-file-dynamo/{bucket}/{username}/{filename}/{foldername}
           method: DELETE
+          request:
+            passThrought: WHEN_NO_MATCH
           cors: true
   postFile:
     handler: lambdas/postFile.post_file
@@ -111,13 +115,6 @@ functions:
           cors: true
           request:
             passThrought: WHEN_NO_MATCH
-  # loginUser:
-  #   handler: user/login.handler
-  #   events:
-  #     - http:
-  #         path: user/login
-  #         method: post
-  #         cors: true
   
   signupUser:
     handler: lambdas/register.register_user
@@ -126,23 +123,6 @@ functions:
           path: user/signup
           method: POST
           cors: true
-
-  # privateAPI:
-  #   handler: user/private.handler
-  #   events:
-  #     - http:
-  #         path: user/private
-  #         method: post
-  #         cors: true
-  #         authorizer:
-  #           name: PrivateAuthorizer
-  #           type: COGNITO_USER_POOLS
-  #           arn:
-  #             Fn::GetAtt:
-  #               - UserPool
-  #               - Arn
-  #           claims:
-  #             - email
 resources:
   Resources:
     BivujaBucket:
