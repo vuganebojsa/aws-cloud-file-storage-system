@@ -65,7 +65,7 @@ functions:
     handler: lambdas/deleteFileDynamo.delete_file_dynamo
     events: 
       - http:
-          path: delete-file-dynamo/{bucket}/{username}/{filename}/{foldername}
+          path: delete-file-dynamo/{bucket}/{username}/{id}
           method: DELETE
           request:
             passThrought: WHEN_NO_MATCH

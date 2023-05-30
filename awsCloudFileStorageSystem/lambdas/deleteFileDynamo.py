@@ -6,10 +6,8 @@ def delete_file_dynamo(event, context):
     # Replace 'YOUR_BUCKET_NAME' with your actual bucket name
     bucket_name = event['pathParameters']['bucket']
     username = event['pathParameters']['username']
+    file_id = event['pathParameters']['id']
 
-    file_name = base64.b64decode(event['pathParameters']['filename']).decode('utf-8')
-    folder_name = base64.b64decode(event['pathParameters']['foldername']).decode('utf-8')
-    
 
     dynamodb_client = boto3.client('dynamodb')
 
@@ -17,8 +15,7 @@ def delete_file_dynamo(event, context):
         dynamodb_client.delete_item(
             TableName='bivuja-table',
             Key={
-                'folderName': {'S': folder_name},
-                'filename': {'S': file_name},
+                'ID': {'S': file_id},
                 'username': {'S': username},
                 'bucketName':{'S':bucket_name}
             }
