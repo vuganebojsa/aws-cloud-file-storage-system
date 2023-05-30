@@ -2,13 +2,13 @@ import json
 from .responses import *
 import boto3
 import base64
+import urllib3
 
 def get_file(event, context):
     s3 = boto3.client('s3')
-    print(event)
     bucket_name = event['pathParameters']['bucket']
-    file_name = event['pathParameters']['filename']
-    
+    file_name = base64.b64decode(event['pathParameters']['filename']).decode('utf-8')
+    print(file_name)
     try:
         s3.head_object(Bucket=bucket_name, Key= file_name)
     except Exception:

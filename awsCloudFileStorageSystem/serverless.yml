@@ -43,6 +43,15 @@ functions:
           path: get-folders/{username}
           method: GET
           cors: true 
+  downloadFile:
+    handler: lambdas/downloadFile.download_file
+    events: 
+      - http:
+          path: download_file/{fullpath}
+          method: GET
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true 
   postFile:
     handler: lambdas/postFile.post_file
     events:
