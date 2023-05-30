@@ -70,6 +70,15 @@ functions:
           cors: true
           request:
             passThrought: WHEN_NO_MATCH
+  postFolderS3:
+    handler: lambdas/postFolderS3.post_folder_s3
+    events:
+      - http:
+          path: post-folder-s3/
+          method: POST
+          cors: true
+          request:
+            passThrought: WHEN_NO_MATCH
   # loginUser:
   #   handler: user/login.handler
   #   events:
