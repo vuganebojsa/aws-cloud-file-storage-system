@@ -52,6 +52,20 @@ functions:
           request:
             passThrought: WHEN_NO_MATCH
           cors: true 
+  deleteFile:
+    handler: lambdas/deleteFile.delete_file
+    events: 
+      - http:
+          path: delete_file/{bucket}/{filename}
+          method: DELETE
+          cors: true
+  deleteFileDynamo:
+    handler: lambdas/deleteFileDynamo.delete_file_dynamo
+    events: 
+      - http:
+          path: delete_file/{bucket}/{username}/{filename}/{foldername}
+          method: DELETE
+          cors: true
   postFile:
     handler: lambdas/postFile.post_file
     events:

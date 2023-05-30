@@ -1,16 +1,28 @@
 import json
-from .responses import *
 import boto3
 import base64
 
-def post_file_to_folder(event, context):
-    s3 = boto3.client('s3')
+def delete_file_dynamo(event, context):
+    # Replace 'YOUR_BUCKET_NAME' with your actual bucket name
     bucket_name = event['pathParameters']['bucket']
+    username = event['pathParameters']['username']
+
     file_name = base64.b64decode(event['pathParameters']['filename']).decode('utf-8')
-    body = base64.b64decode(event['body'])
+    folder_name = base64.b64decode(event['pathParameters']['foldername']).decode('utf-8')
+    
+
+    dynamodb_client = boto3.client('dynamodb')
 
     try:
-        response = s3.put_object(Bucket=bucket_name, Key=file_name, Body = body)
+        dynamodb_client.delete_item(
+            TableName='bivuja-table',
+            Key={
+                'folderName': {'S': folder_name},
+                'filename': {'S': file_name},
+                'username': {'S': username},
+                'bucketName':{'S':bucket_name}
+            }
+        )
         return {
             'headers': {
                 'Content-Type':'application/json',
@@ -30,7 +42,4 @@ def post_file_to_folder(event, context):
           'statusCode': 500,
           'body': 'Failed to upload file to S3 bucket.'
        }
-    
-
-
 
