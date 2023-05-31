@@ -10,14 +10,11 @@ def delete_file_dynamo(event, context):
 
 
     dynamodb_client = boto3.client('dynamodb')
-
     try:
         dynamodb_client.delete_item(
             TableName='bivuja-table',
             Key={
-                'ID': {'S': file_id},
-                'username': {'S': username},
-                'bucketName':{'S':bucket_name}
+                'id': {'S': file_id},
             }
         )
         return {
