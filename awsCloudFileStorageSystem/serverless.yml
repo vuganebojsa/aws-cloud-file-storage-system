@@ -157,6 +157,32 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 5
           WriteCapacityUnits: 5
+    DynamoDbConsistencyTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: consistency-bivuja-table  # Replace with your DynamoDB table name
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+    DynamoDbContentShareTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: content-share-bivuja-table  # Replace with your DynamoDB table name
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
       
     UserPool:
       Type: AWS::Cognito::UserPool
