@@ -37,7 +37,7 @@ def delete_file(event, context):
     try:
         response = s3_client.delete_object(Bucket=bucket_name, Key=file_name)
         response_code = response['ResponseMetadata']['HTTPStatusCode']
-        if response_code != 200:
+        if response_code != 204:
             item = get_item_by_id(file_id)
             db_cons = save_item_to_dynamodb(item)
             if db_cons['ResponseMetadata']['HTTPStatusCode'] == 200:
