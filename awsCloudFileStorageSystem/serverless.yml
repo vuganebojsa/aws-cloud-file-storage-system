@@ -109,7 +109,7 @@ functions:
     handler: lambdas/deleteFile.delete_file
     events:
       - http:
-          path: delete-file-from-bucket/{bucket}/{filename}
+          path: delete-file-from-bucket/{bucket}/{filename}/{id}
           method: DELETE
           request:
             passThrought: WHEN_NO_MATCH

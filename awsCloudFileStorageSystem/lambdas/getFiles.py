@@ -2,6 +2,7 @@ import json
 from .responses import *
 import boto3
 import base64
+from datetime import datetime
 
 def get_files(event, context):
     # s3 = boto3.client('s3')
@@ -38,8 +39,9 @@ def get_files(event, context):
     files = response['Items']
 
     # Continue scanning if the response is paginated
+    files_sorted = sorted(files, key=lambda x: datetime.strptime(x["createdAt"], "%d/%m/%Y, %H:%M:%S"), reverse=True)
 
-    print(files)
+    print(files_sorted)
     # Return the list of files
     response_object = {
         'headers': {
@@ -48,7 +50,7 @@ def get_files(event, context):
             'Access-Control-Allow-Origin':'*'
         },
         "statusCode": 200,
-        "body": json.dumps(files)
+        "body": json.dumps(files_sorted)
     }
 
     return response_object
