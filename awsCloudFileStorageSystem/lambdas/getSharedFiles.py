@@ -30,9 +30,12 @@ def query_table_with_multiple_keys(folder_name, giver):
 def query_table_filename(filename, giver):
     table_name = 'bivuja-table'
     dynamodb = boto3.resource('dynamodb')
-    split_string = filename.rsplit('/', 1)
-    folder_path = split_string[0]
-    file_name = split_string[1]
+    folder_path = ''
+    file_name = filename
+    if '/' in filename:
+        split_string = filename.rsplit('/', 1)
+        folder_path = split_string[0]
+        file_name = split_string[1]
     # Access the DynamoDB table
     table = dynamodb.Table(table_name)
     response = table.scan(
