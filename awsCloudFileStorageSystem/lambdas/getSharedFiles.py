@@ -30,14 +30,17 @@ def query_table_with_multiple_keys(folder_name, giver):
 def query_table_filename(filename, giver):
     table_name = 'bivuja-table'
     dynamodb = boto3.resource('dynamodb')
-
+    split_string = filename.rsplit('/', 1)
+    folder_path = split_string[0]
+    file_name = split_string[1]
     # Access the DynamoDB table
     table = dynamodb.Table(table_name)
     response = table.scan(
-        FilterExpression='filename = :filename AND #usr = :giver',
+        FilterExpression='filename = :filename and folderName = :folderName AND #usr = :giver',
         ExpressionAttributeValues={
-            ':filename': filename,
-            ':giver': giver
+            ':filename': file_name,
+            ':giver': giver,
+            ':folderName':folder_path
         },
         ExpressionAttributeNames={
             '#usr': 'username'
@@ -73,7 +76,7 @@ def get_shared_files(event, context):
         if '.' in file['path']:
             # get only file
             item = query_table_filename(file['path'], file['giver'])
-            if len(items) != 0:
+            if len(item) != 0:
                 
                 filtered_files.append(item[0])
         else:
