@@ -91,6 +91,10 @@ def get_shared_files(event, context):
 
 
     print(filtered_files)
+    no_duplicates = []
+    for f in filtered_files:
+        if f not in no_duplicates:
+            no_duplicates.append(f)
     # Return the list of files
     response_object = {
         'headers': {
@@ -99,7 +103,7 @@ def get_shared_files(event, context):
             'Access-Control-Allow-Origin':'*'
         },
         "statusCode": 200,
-        "body": json.dumps(filtered_files)
+        "body": json.dumps(no_duplicates)
     }
 
     return response_object
