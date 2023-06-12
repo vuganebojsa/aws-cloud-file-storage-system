@@ -12,8 +12,15 @@ def query_table_with_multiple_keys(folder_name, giver):
 
     # Access the DynamoDB table
     table = dynamodb.Table(table_name)
-    response = table.query(
-        KeyConditionExpression=boto3.dynamodb.conditions.Key('folderName').eq(folder_name) & boto3.dynamodb.conditions.Key('username').eq(giver)
+    response = table.scan(
+       FilterExpression='folderName = :folder_name AND #usr = :giver',
+        ExpressionAttributeValues={
+            ':folder_name': folder_name,
+            ':giver': giver
+        },
+        ExpressionAttributeNames={
+            '#usr': 'username'
+        }
     )
 
     items = response['Items']
@@ -26,9 +33,15 @@ def query_table_filename(filename, giver):
 
     # Access the DynamoDB table
     table = dynamodb.Table(table_name)
-    response = table.query(
-        KeyConditionExpression=boto3.dynamodb.conditions.Key('filename').eq(filename) & boto3.dynamodb.conditions.Key('username').eq(giver)
-    )
+    response = table.scan(
+        FilterExpression='filename = :filename AND #usr = :giver',
+        ExpressionAttributeValues={
+            ':filename': filename,
+            ':giver': giver
+        },
+        ExpressionAttributeNames={
+            '#usr': 'username'
+        }   )
 
     items = response['Items']
     # Process the items as needed
@@ -60,11 +73,14 @@ def get_shared_files(event, context):
         if '.' in file['path']:
             # get only file
             item = query_table_filename(file['path'], file['giver'])
-            filtered_files.append(item)
+            if len(items) != 0:
+                
+                filtered_files.append(item[0])
         else:
             items = query_table_with_multiple_keys(file['path'], file['giver'])
-            for item in items:
-                filtered_files.append(item)
+            if len(items) != 0:
+                for item in items:
+                    filtered_files.append(item)
 
 
 
