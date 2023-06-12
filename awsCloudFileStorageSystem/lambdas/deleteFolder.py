@@ -51,7 +51,15 @@ def save_item_to_dynamodb(item):
     return response
 
 
-def delete_file(event, context):
+def delete_folder(event, context):
+
+    # steps
+    # save it in memory while deleting
+    # so if i delete from folder-bivuja-table then i want it here while exceting to be saved for later 
+    # revrite just in case
+    # and so on
+    # s3 also, for each file that i want to delete, i need to first save in memory somehow
+
     # Replace 'YOUR_BUCKET_NAME' with your actual bucket name
     bucket_name = event['pathParameters']['bucket']
     file_id = event['pathParameters']['id']
