@@ -113,6 +113,13 @@ functions:
           path: get-shared-files/{username}
           method: GET
           cors: true
+  getMySharedFilesInfo:
+    handler: lambdas/getMySharedFilesInfo.get_my_shared_files_info
+    events:
+      - http:
+          path: get-my-shared-files-info/{username}
+          method: GET
+          cors: true
   signupUser:
     handler: lambdas/register.register_user
     events:
@@ -125,6 +132,15 @@ functions:
     events:
       - http:
           path: delete-file-from-bucket/{bucket}/{filename}/{id}
+          method: DELETE
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true
+  stopShareFile:
+    handler: lambdas/stopShareFile.stop_share_file
+    events:
+      - http:
+          path: stop-share-file/{id}
           method: DELETE
           request:
             passThrought: WHEN_NO_MATCH
