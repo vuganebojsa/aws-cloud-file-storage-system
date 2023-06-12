@@ -97,6 +97,24 @@ functions:
           cors: true
           request:
             passThrought: WHEN_NO_MATCH
+  shareFile:
+    handler: lambdas/shareFile.share_file
+    events:
+      - http:
+          path: share-file/
+          method: POST
+          cors: true
+          request:
+            passThrought: WHEN_NO_MATCH
+  getSharedFiles:
+    handler: lambdas/getSharedFiles.get_shared_files
+    events:
+      - http:
+          path: get-shared-files/{username}
+          method: GET
+          cors: true
+          request:
+            passThrought: WHEN_NO_MATCH
   
   signupUser:
     handler: lambdas/register.register_user
