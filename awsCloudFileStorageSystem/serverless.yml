@@ -113,9 +113,6 @@ functions:
           path: get-shared-files/{username}
           method: GET
           cors: true
-          request:
-            passThrought: WHEN_NO_MATCH
-  
   signupUser:
     handler: lambdas/register.register_user
     events:
