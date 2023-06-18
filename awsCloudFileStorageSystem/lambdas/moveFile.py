@@ -35,21 +35,32 @@ def save_item_to_dynamodb(item):
     return response
 
 
-def move_file_s3(original_path, new_path, filename):
+def move_file_s3(original_path, new_path, filename, username):
     source_bucket = 'bivuja-bucket'
     destination_bucket = 'bivuja-bucket'
-    source_key = original_path + '/' + filename  # Path of the file to be moved
-    destination_key = new_path + '/' + filename  # Destination path for the file
-
-    s3_client = boto3.client('s3')
+    source_key = username + '-' +  original_path + '/' + filename  # Path of the file to be moved
+    destination_key = username + '-' + new_path + '/' + filename  # Destination path for the file
+    print(source_key)
+    print(destination_key)
+    s3_client = boto3.client('s3', region_name='eu-central-1')
 
     # Copy the file to the destination folder
-    response = s3_client.copy_object(
-        Bucket=destination_bucket,
-        CopySource={'Bucket': source_bucket, 'Key': source_key},
-        Key=destination_key
-    )
+    
+    try:
+    # Copy the file to the destination folder
+        response = s3_client.copy_object(
+            Bucket=destination_bucket,
+            CopySource={'Bucket': source_bucket, 'Key': source_key},
+            Key=destination_key
+        )
+        print("File copied successfully!")
+    except Exception as e:
+        print("An error occurred while copying the file:")
+        print(e.response['Error']['Message'])
+        response_code = response['ResponseMetadata']['HTTPStatusCode']
+        print(response_code)
     response_code = response['ResponseMetadata']['HTTPStatusCode']
+
     if response_code <= 204:
     # Delete the file from the source folder
         response = s3_client.delete_object(
@@ -89,6 +100,7 @@ def move_file(event, context):
     if len(items) != 0:
         try:
             save_item_to_destination_table(items[0])
+            print('Prosao upis u consistency')
             response = table.update_item(
             Key={'id': items[0]['id']},
             UpdateExpression='SET folderName = :value8',
@@ -96,9 +108,13 @@ def move_file(event, context):
                 ':value8': info_dict['newPathName']
             },
             ReturnValues='ALL_NEW')
+            print('Prosao upis u dynamo update')
             response_code = response['ResponseMetadata']['HTTPStatusCode']
+            print(response_code)
+
             if response_code <= 204:
-                s3_move_success = move_file_s3(old_folder_name, new_folder_name, filename)
+                s3_move_success = move_file_s3(old_folder_name, new_folder_name, filename, info_dict['username'])
+                print(s3_move_success)
                 if s3_move_success is True:
                     return {
                         'statusCode': 200,
@@ -117,6 +133,7 @@ def move_file(event, context):
                         'body': 'Data edited successfully.'
                     }
         except Exception as e:
+            print('Usao u exception')
             response = table.update_item(
                     Key={'id': items[0]['id']},
                     UpdateExpression='SET folderName = :value8',
