@@ -127,6 +127,15 @@ functions:
           path: user/signup
           method: POST
           cors: true
+  moveFile:
+    handler: lambdas/moveFile.move_file
+    events:
+      - http:
+          path: move-file/
+          method: POST
+          cors: true
+          request:
+            passThrought: WHEN_NO_MATCH
   deleteFile:
     handler: lambdas/deleteFile.delete_file
     events:
