@@ -39,7 +39,7 @@ def get_files(event, context):
     files = response['Items']
 
     # Continue scanning if the response is paginated
-    files_sorted = sorted(files, key=lambda x: datetime.strptime(x["createdAt"], "%d/%m/%Y, %H:%M:%S"), reverse=True)
+    files_sorted = sorted(files, key=lambda x: datetime.strptime(x["createdAt"], "%m/%d/%Y, %H:%M:%S"), reverse=True)
 
     print(files_sorted)
     # Return the list of files
