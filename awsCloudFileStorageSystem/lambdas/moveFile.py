@@ -38,8 +38,14 @@ def save_item_to_dynamodb(item):
 def move_file_s3(original_path, new_path, filename, username):
     source_bucket = 'bivuja-bucket'
     destination_bucket = 'bivuja-bucket'
-    source_key = username + '-' +  original_path + '/' + filename  # Path of the file to be moved
-    destination_key = username + '-' + new_path + '/' + filename  # Destination path for the file
+    if username + '-' not in filename:
+        source_key = username + '-' +  original_path + '/' + filename  # Path of the file to be moved
+        destination_key = username + '-' + new_path + '/' + filename  # Destination path for the file
+    else:
+        source_key = filename
+        new_filename = filename.split('-')[1]
+        destination_key = username + '-' + new_path + '/' + new_filename  # Destination path for the file
+
     print(source_key)
     print(destination_key)
     s3_client = boto3.client('s3', region_name='eu-central-1')
@@ -101,13 +107,24 @@ def move_file(event, context):
         try:
             save_item_to_destination_table(items[0])
             print('Prosao upis u consistency')
-            response = table.update_item(
-            Key={'id': items[0]['id']},
-            UpdateExpression='SET folderName = :value8',
-            ExpressionAttributeValues={
-                ':value8': info_dict['newPathName']
-            },
-            ReturnValues='ALL_NEW')
+            if info_dict['folderName'] == '':
+                new_filename = info_dict['filename'].split('-')[1]
+                response = table.update_item(
+                Key={'id': items[0]['id']},
+                UpdateExpression='SET folderName = :value8, filename= :new_filename',
+                ExpressionAttributeValues={
+                    ':value8': info_dict['newPathName'],
+                    ':new_filename': new_filename
+                },
+                ReturnValues='ALL_NEW')
+            else:
+                response = table.update_item(
+                Key={'id': items[0]['id']},
+                UpdateExpression='SET folderName = :value8',
+                ExpressionAttributeValues={
+                    ':value8': info_dict['newPathName']
+                },
+                ReturnValues='ALL_NEW')
             print('Prosao upis u dynamo update')
             response_code = response['ResponseMetadata']['HTTPStatusCode']
             print(response_code)
