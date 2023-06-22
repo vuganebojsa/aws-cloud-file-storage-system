@@ -4,6 +4,23 @@ import base64
 
 
 dynamodb = boto3.resource('dynamodb')
+def send_email(recipient, subject, message):
+    client = boto3.client('ses', region_name='eu-central-1')  
+
+    try:
+        response = client.send_email(
+            Source='nebojsavuga@gmail.com',  # Replace with your verified sender email
+            Destination={'ToAddresses': [recipient]},
+            Message={
+                'Subject': {'Data': subject},
+                'Body': {'Text': {'Data': message}}
+            }
+        )
+    except Exception as e:
+        print(e)
+
+    return response['MessageId']
+
 
 def get_item_by_id(item_id):
     
@@ -50,6 +67,7 @@ def delete_file(event, context):
           'statusCode': 401,
           'body': 'Failde to delete file.'
        }
+        send_email(event['headers']['useremail'],'Successfully deleted a file with name:' + file_name, 'Successfully deleted a file with name:' + file_name)
 
         return {
             'headers': {

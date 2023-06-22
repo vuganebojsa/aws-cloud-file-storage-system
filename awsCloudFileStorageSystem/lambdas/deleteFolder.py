@@ -51,6 +51,25 @@ def save_item_to_dynamodb(item):
     return response
 
 
+
+def send_email(recipient, subject, message):
+    client = boto3.client('ses', region_name='eu-central-1')  
+
+    try:
+        response = client.send_email(
+            Source='nebojsavuga@gmail.com',  # Replace with your verified sender email
+            Destination={'ToAddresses': [recipient]},
+            Message={
+                'Subject': {'Data': subject},
+                'Body': {'Text': {'Data': message}}
+            }
+        )
+    except Exception as e:
+        print(e)
+
+    return response['MessageId']
+
+
 def delete_folder(event, context):
 
     # steps
@@ -84,6 +103,7 @@ def delete_folder(event, context):
           'statusCode': 401,
           'body': 'Failde to delete file.'
        }
+        send_email(event['headers']['useremail'],'Successfully deleted a folder with name ' + file_name, 'Successfully deleted a folder with name ' + file_name)
 
         return {
             'headers': {

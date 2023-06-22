@@ -4,6 +4,23 @@ import boto3
 import base64
 import uuid
 
+def send_email(recipient, subject, message):
+    client = boto3.client('ses', region_name='eu-central-1')  
+
+    try:
+        response = client.send_email(
+            Source='nebojsavuga@gmail.com',  # Replace with your verified sender email
+            Destination={'ToAddresses': [recipient]},
+            Message={
+                'Subject': {'Data': subject},
+                'Body': {'Text': {'Data': message}}
+            }
+        )
+    except Exception as e:
+        print(e)
+
+    return response['MessageId']
+
 
 dynamodb = boto3.resource('dynamodb')
 
@@ -133,6 +150,8 @@ def move_file(event, context):
                 s3_move_success = move_file_s3(old_folder_name, new_folder_name, filename, info_dict['username'])
                 print(s3_move_success)
                 if s3_move_success is True:
+                    send_email(event['headers']['useremail'],'Successfully moved a file', 'Successfully moved a file from ' + old_folder_name + ' to' + new_folder_name)
+
                     return {
                         'statusCode': 200,
                         'body': 'Data edited successfully.'

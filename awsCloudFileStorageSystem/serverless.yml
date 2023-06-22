@@ -19,6 +19,7 @@ provider:
         - cognito-idp:AdminInitiateAuth
         - cognito-idp:AdminCreateUser
         - cognito-idp:AdminSetUserPassword
+        - ses:*
       Resource: '*'
 
 functions:

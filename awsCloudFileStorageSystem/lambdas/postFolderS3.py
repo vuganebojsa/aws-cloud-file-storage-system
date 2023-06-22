@@ -6,6 +6,25 @@ import base64
 
 dynamodb = boto3.resource('dynamodb')
 
+def send_email(recipient, subject, message):
+    client = boto3.client('ses', region_name='eu-central-1')  
+
+    try:
+        response = client.send_email(
+            Source='nebojsavuga@gmail.com',  # Replace with your verified sender email
+            Destination={'ToAddresses': [recipient]},
+            Message={
+                'Subject': {'Data': subject},
+                'Body': {'Text': {'Data': message}}
+            }
+        )
+    except Exception as e:
+        print(e)
+
+    return response['MessageId']
+
+
+
 def get_item_by_id(item_id):
     
     table_name = 'consistency-bivuja-table'
@@ -75,6 +94,8 @@ def post_folder_s3(event, context):
                             'id': {'S': items[0]['id']},
                         }
                     )
+                    send_email(event['headers']['useremail'],'Successfully posted a folder with name ' + foldername, 'Successfully posted a folder with name ' + foldername)
+
                     return {
                         'headers': {
                             'Content-Type':'application/json',
@@ -94,7 +115,8 @@ def post_folder_s3(event, context):
                         'statusCode': 500,
                         'body': 'Failed to upload file to S3 bucket.'
                     } 
-        
+        send_email(event['headers']['useremail'],'Successfully posted a folder with name ' + foldername, 'Successfully posted a folder with name ' + foldername)
+
         return {
             'headers': {
                 'Content-Type':'application/json',
