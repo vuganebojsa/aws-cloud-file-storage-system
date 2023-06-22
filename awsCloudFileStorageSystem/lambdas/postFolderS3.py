@@ -94,7 +94,7 @@ def post_folder_s3(event, context):
                             'id': {'S': items[0]['id']},
                         }
                     )
-                    send_email(event['headers']['useremail'],'Successfully posted a folder with name ' + foldername, 'Successfully posted a folder with name ' + foldername)
+                    send_email(event['headers']['useremail'],'Successfully posted a folder with name ' + p1, 'Successfully posted a folder with name ' + p1)
 
                     return {
                         'headers': {
