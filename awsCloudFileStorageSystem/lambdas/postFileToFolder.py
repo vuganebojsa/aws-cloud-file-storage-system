@@ -28,7 +28,7 @@ def post_file_to_folder(event, context):
     body = base64.b64decode(event['body'])
 
     try:
-        send_email(event['headers']['useremail'],'Successfully added a file', 'Successfully added a file')
+        send_email(event['headers']['useremail'],'Successfully added a file with name: '+ file_name, 'Successfully added a file with name: '+ file_name)
 
         response = s3.put_object(Bucket=bucket_name, Key=file_name, Body = body)
         return {

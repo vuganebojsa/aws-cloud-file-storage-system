@@ -27,7 +27,7 @@ def post_file(event, context):
     body = base64.b64decode(event['body'])
     try:
         response = s3.put_object(Bucket=bucket_name, Key=file_name, Body = body)
-        send_email(event['headers']['useremail'],'Successfully added a file to our system', 'Successfully added a file to our system')
+        send_email(event['headers']['useremail'],'Successfully added a file to our system with name: ' + file_name, 'Successfully added a file to our system with name: ' + file_name)
         return {
             'headers': {
                 'Content-Type':'application/json',

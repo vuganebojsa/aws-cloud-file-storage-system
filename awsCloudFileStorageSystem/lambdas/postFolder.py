@@ -4,6 +4,8 @@ import boto3
 import base64
 import uuid
 
+
+
 def post_folder_dynamo(event, context):
 
     dynamodb_client = boto3.client('dynamodb')
