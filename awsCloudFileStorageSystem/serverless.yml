@@ -78,6 +78,18 @@ functions:
           authorizer: 
              type: COGNITO_USER_POOLS
              authorizerId: {Ref: ApiGatewayAuthorizer}
+  sendInvite:
+    handler: lambdas/sendInvite.send_invite
+    events:
+      - http:
+          path: send-invite/
+          method: POST
+          cors: true
+          request:
+            passThrought: WHEN_NO_MATCH
+          authorizer: 
+              type: COGNITO_USER_POOLS
+              authorizerId: {Ref: ApiGatewayAuthorizer}
   postFileToFolder:
     handler: lambdas/postFileToFolder.post_file_to_folder
     events:
@@ -256,6 +268,19 @@ resources:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: folder-bivuja-table  # Replace with your DynamoDB table name
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+    DynamoDbInviteTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: invite-bivuja-table  # Replace with your DynamoDB table name
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
