@@ -107,7 +107,11 @@ def move_file(event, context):
     old_folder_name = info_dict['folderName']
     new_folder_name = info_dict['newPathName']
     filename = info_dict['filename']
-
+    if old_folder_name is None or new_folder_name is None or filename is None:
+        return {
+                        'statusCode': 400,
+                        'body': 'Failed to move file.'
+                    }
     response = table.scan(
         FilterExpression='filename = :filename and folderName = :folderName and bucketName = :bucketName AND #usr = :giver',
         ExpressionAttributeValues={

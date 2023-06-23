@@ -14,6 +14,11 @@ def download_file(event, context):
     # Set the path and filename of the file to download
     s3 = boto3.client('s3', region_name=region)
     fullpath = event['pathParameters']['fullpath']
+    if fullpath is None:
+        return {
+        'statusCode': 400,
+        'body': 'Error downloading file. Please enter full path'
+        }
     # Download the file from S3
     try:
         response = s3.download_file(Bucket=bucket_name, Key=fullpath)

@@ -47,7 +47,16 @@ def delete_file(event, context):
     bucket_name = event['pathParameters']['bucket']
     file_id = event['pathParameters']['id']
     file_name = base64.b64decode(event['pathParameters']['filename']).decode('utf-8')
-
+    if file_id is None or file_name is None or bucket_name is None:
+        return {
+            'headers': {
+                'Content-Type':'application/json',
+                'Access-Control-Allow-Methods':'*',
+                'Access-Control-Allow-Origin':'*'
+            },
+            'statusCode': 400,
+            'body': 'File failed to delete.'
+        }  
     # Create an S3 client
     s3_client = boto3.client('s3')
 
@@ -76,7 +85,7 @@ def delete_file(event, context):
                 'Access-Control-Allow-Origin':'*'
             },
             'statusCode': 200,
-            'body': 'File uploaded successfully.'
+            'body': 'File deleted successfully.'
         }  
     except Exception as e:
         item = get_item_by_id(file_id)
@@ -88,6 +97,6 @@ def delete_file(event, context):
                 'Access-Control-Allow-Origin':'*'
             },
             'statusCode': 500,
-            'body': 'Failed to upload file to S3 bucket.'
+            'body': 'Failed to delete file from S3 bucket.'
         }
 

@@ -34,7 +34,16 @@ def delete_file_dynamo(event, context):
 
     item_to_save = get_item_by_id(file_id)
     save_item_to_destination_table(item_to_save)
-
+    if file_id is None:
+        return {
+          'headers': {
+                'Content-Type':'application/json',
+                'Access-Control-Allow-Methods':'*',
+                'Access-Control-Allow-Origin':'*'
+            },
+          'statusCode': 400,
+          'body': 'Failed to delete file from S3 bucket.'
+       }
     dynamodb = boto3.client('dynamodb')
     try:
         dynamodb.delete_item(
@@ -50,7 +59,7 @@ def delete_file_dynamo(event, context):
                 'Access-Control-Allow-Origin':'*'
             },
             'statusCode': 200,
-            'body': 'File uploaded successfully.'
+            'body': 'File deleted successfully.'
         }  
     except Exception as e:
        return {
@@ -60,6 +69,6 @@ def delete_file_dynamo(event, context):
                 'Access-Control-Allow-Origin':'*'
             },
           'statusCode': 500,
-          'body': 'Failed to upload file to S3 bucket.'
+          'body': 'Failed to delete file from S3 bucket.'
        }
 

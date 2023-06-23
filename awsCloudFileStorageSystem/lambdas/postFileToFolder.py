@@ -26,7 +26,16 @@ def post_file_to_folder(event, context):
     bucket_name = event['pathParameters']['bucket']
     file_name = base64.b64decode(event['pathParameters']['filename']).decode('utf-8')
     body = base64.b64decode(event['body'])
-
+    if body is None or event['headers']['useremail'] is None:
+        return {
+          'headers': {
+                'Content-Type':'application/json',
+                'Access-Control-Allow-Methods':'*',
+                'Access-Control-Allow-Origin':'*'
+            },
+          'statusCode': 400,
+          'body': 'Failed to upload folder to S3 bucket.'
+       }
     try:
         send_email(event['headers']['useremail'],'Successfully added a file with name: '+ file_name, 'Successfully added a file with name: '+ file_name)
 
@@ -38,7 +47,7 @@ def post_file_to_folder(event, context):
                 'Access-Control-Allow-Origin':'*'
             },
             'statusCode': 200,
-            'body': 'File uploaded successfully.'
+            'body': 'Folder uploaded successfully.'
         }  
     except Exception as e:
        return {
@@ -48,7 +57,7 @@ def post_file_to_folder(event, context):
                 'Access-Control-Allow-Origin':'*'
             },
           'statusCode': 500,
-          'body': 'Failed to upload file to S3 bucket.'
+          'body': 'Failed to upload folder to S3 bucket.'
        }
     
 

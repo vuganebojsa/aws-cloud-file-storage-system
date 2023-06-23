@@ -58,6 +58,16 @@ def post_folder_s3(event, context):
     body = event['body']
     info_dict = json.loads(body)
     path = info_dict['path']
+    if info_dict is None or path is None:
+        return {
+                    'headers': {
+                            'Content-Type':'application/json',
+                            'Access-Control-Allow-Methods':'*',
+                            'Access-Control-Allow-Origin':'*'
+                        },
+                    'statusCode': 400,
+                    'body': 'Failed to upload folder to S3 bucket. File path is not valid.'
+                } 
     username, spl_path = path.split('-')
     p1 = ''
     foldername = ''
@@ -103,7 +113,7 @@ def post_folder_s3(event, context):
                             'Access-Control-Allow-Origin':'*'
                         },
                         'statusCode': 200,
-                        'body': 'File uploaded successfully.'
+                        'body': 'Folder uploaded successfully.'
                     }  
                 except Exception as e:
                     return {
@@ -113,7 +123,7 @@ def post_folder_s3(event, context):
                                 'Access-Control-Allow-Origin':'*'
                             },
                         'statusCode': 500,
-                        'body': 'Failed to upload file to S3 bucket.'
+                        'body': 'Failed to upload folder to S3 bucket.'
                     } 
         send_email(event['headers']['useremail'],'Successfully posted a folder with name ' + foldername, 'Successfully posted a folder with name ' + foldername)
 
@@ -124,7 +134,7 @@ def post_folder_s3(event, context):
                 'Access-Control-Allow-Origin':'*'
             },
             'statusCode': 200,
-            'body': 'File uploaded successfully.'
+            'body': 'Folder uploaded successfully.'
         }  
     except Exception as e:
        return {

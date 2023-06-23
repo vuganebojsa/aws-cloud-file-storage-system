@@ -25,6 +25,16 @@ def post_file(event, context):
     bucket_name = event['pathParameters']['bucket']
     file_name = event['pathParameters']['filename']
     body = base64.b64decode(event['body'])
+    if body is None or file_name is None or bucket_name is None:
+        return {
+          'headers': {
+                'Content-Type':'application/json',
+                'Access-Control-Allow-Methods':'*',
+                'Access-Control-Allow-Origin':'*'
+            },
+          'statusCode': 400,
+          'body': 'Failed to upload file to S3 bucket.'
+       }
     try:
         response = s3.put_object(Bucket=bucket_name, Key=file_name, Body = body)
         send_email(event['headers']['useremail'],'Successfully added a file to our system with name: ' + file_name, 'Successfully added a file to our system with name: ' + file_name)

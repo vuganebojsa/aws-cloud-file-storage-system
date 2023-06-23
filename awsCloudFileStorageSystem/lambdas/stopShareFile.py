@@ -4,7 +4,6 @@ import base64
 
 
 def stop_share_file(event, context):
-    # Replace 'YOUR_BUCKET_NAME' with your actual bucket name
 
     file_id = event['pathParameters']['id']
 
@@ -24,7 +23,7 @@ def stop_share_file(event, context):
                 'Access-Control-Allow-Origin':'*'
             },
             'statusCode': 200,
-            'body': 'File uploaded successfully.'
+            'body': 'File stoped sharing successfully.'
         }  
     except Exception as e:
        return {
@@ -33,7 +32,7 @@ def stop_share_file(event, context):
                 'Access-Control-Allow-Methods':'*',
                 'Access-Control-Allow-Origin':'*'
             },
-          'statusCode': 500,
-          'body': 'Failed to upload file to S3 bucket.'
+          'statusCode': 400,
+          'body': 'Failed to stop sharing file. Invalid File id.'
        }
 

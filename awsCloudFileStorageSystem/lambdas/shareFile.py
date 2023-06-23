@@ -15,6 +15,11 @@ def share_file(event, context):
     # content-share-bivuja-table
     # if shared folder just list the folder content and share it, without other folders, without other folders
     info_dict = json.loads(info)
+    if info_dict.get('giver') is None or info_dict.get('receiver') is None or info_dict.get('path') is None:
+        return {
+            'statusCode': 400,
+            'body':'Not all parameters were entered.'
+        }
     item_id = str(uuid.uuid4())
     try:
         response = dynamodb_client.put_item(
@@ -36,10 +41,10 @@ def share_file(event, context):
         )
         return {
             'statusCode': 200,
-            'body': 'Data uploaded successfully.'
+            'body': 'Data shared successfully.'
         }
     except Exception as e:
         return {
             'statusCode': 500,
-            'body': f'Failed to upload data: {str(e)}'
+            'body': f'Failed to share data: {str(e)}'
         }

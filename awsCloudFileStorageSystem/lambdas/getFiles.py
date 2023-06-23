@@ -5,21 +5,8 @@ import base64
 from datetime import datetime
 
 def get_files(event, context):
-    # s3 = boto3.client('s3')
-    #bucket_name = event['pathParameters']['bucket']
+
     username = event['pathParameters']['username']
-
-    # objects = s3.list_objects_v2(Bucket=bucket_name, Prefix=username+'-')
-    # print(objects)
-    # print('\n\n\n')
-    # s3_files = objects['Contents']
-    # for s3_file in s3_files:
-    #     print(s3_file)
-
-    # return {
-    #     'statusCode': 200,
-    #     'body': 'Success'
-    # }
 
     dynamodb = boto3.resource('dynamodb')
 

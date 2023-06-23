@@ -12,6 +12,11 @@ def post_file_dynamo(event, context):
     item_id = str(uuid.uuid4())
     dynamodb = boto3.resource('dynamodb')
 
+    if info_dict is None or info_dict['filename'] is None or info_dict['username'] is None or info_dict['folderName'] is None or info_dict['bucketName'] is None:
+        return {
+                'statusCode': 400,
+                'body': 'Invalid parameters.'
+            }
     table = dynamodb.Table('bivuja-table')
     response = table.scan(
         FilterExpression='filename = :filename and folderName = :folderName and bucketName = :bucketName AND #usr = :giver',
