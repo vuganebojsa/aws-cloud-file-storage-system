@@ -7,7 +7,8 @@ dynamodb = boto3.resource('dynamodb')
 
 def save_item_to_destination_table(item):
     destination_table_name = 'consistency-bivuja-table'
-
+    item['mode'] = 'delete'
+    
     destination_table = dynamodb.Table(destination_table_name)
     try:
         response = destination_table.put_item(Item=item)
