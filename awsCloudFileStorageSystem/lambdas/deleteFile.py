@@ -48,15 +48,7 @@ def delete_file(event, context):
     file_id = event['pathParameters']['id']
     file_name = base64.b64decode(event['pathParameters']['filename']).decode('utf-8')
     if file_id is None or file_name is None or bucket_name is None:
-        return {
-            'headers': {
-                'Content-Type':'application/json',
-                'Access-Control-Allow-Methods':'*',
-                'Access-Control-Allow-Origin':'*'
-            },
-            'statusCode': 400,
-            'body': 'File failed to delete.'
-        }  
+        return get_return('File failed to delete.', 401)
     # Create an S3 client
     s3_client = boto3.client('s3')
 
@@ -67,36 +59,27 @@ def delete_file(event, context):
             item = get_item_by_id(file_id)
             db_cons = save_item_to_dynamodb(item)
             if db_cons['ResponseMetadata']['HTTPStatusCode'] == 200:
-                return {
-          'headers': {
-                'Content-Type':'application/json',
-                'Access-Control-Allow-Methods':'*',
-                'Access-Control-Allow-Origin':'*'
-            },
-          'statusCode': 401,
-          'body': 'Failde to delete file.'
-       }
+                return get_return('Failde to delete file.', 401)
+            else:
+                return get_return('Something went wrong.', 500)
+
         send_email(event['headers']['useremail'],'Successfully deleted a file with name:' + file_name, 'Successfully deleted a file with name:' + file_name)
 
-        return {
-            'headers': {
-                'Content-Type':'application/json',
-                'Access-Control-Allow-Methods':'*',
-                'Access-Control-Allow-Origin':'*'
-            },
-            'statusCode': 200,
-            'body': 'File deleted successfully.'
-        }  
+        return get_return('File deleted successfully.', 200)
+    
     except Exception as e:
         item = get_item_by_id(file_id)
         db_cons = save_item_to_dynamodb(item)
-        return {
+        return get_return('Failed to delete file from S3 bucket.', 500)
+
+
+def get_return(body, code):
+    {
             'headers': {
                 'Content-Type':'application/json',
                 'Access-Control-Allow-Methods':'*',
                 'Access-Control-Allow-Origin':'*'
             },
-            'statusCode': 500,
-            'body': 'Failed to delete file from S3 bucket.'
-        }
-
+            'statusCode': code,
+            'body': body
+        }  

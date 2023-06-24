@@ -16,10 +16,7 @@ def share_file(event, context):
     # if shared folder just list the folder content and share it, without other folders, without other folders
     info_dict = json.loads(info)
     if info_dict.get('giver') is None or info_dict.get('receiver') is None or info_dict.get('path') is None:
-        return {
-            'statusCode': 400,
-            'body':'Not all parameters were entered.'
-        }
+        return get_return('Not all parameters were entered.', 400)
     item_id = str(uuid.uuid4())
     try:
         response = dynamodb_client.put_item(
@@ -39,12 +36,18 @@ def share_file(event, context):
                 }
             }
         )
-        return {
-            'statusCode': 200,
-            'body': 'Data shared successfully.'
-        }
+        return get_return('File shared successfully', 200)
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': f'Failed to share data: {str(e)}'
-        }
+        return get_return('Failed to share data', 401)
+    
+
+def get_return(body, code):
+    {
+            'headers': {
+                'Content-Type':'application/json',
+                'Access-Control-Allow-Methods':'*',
+                'Access-Control-Allow-Origin':'*'
+            },
+            'statusCode': code,
+            'body': body
+        }  
