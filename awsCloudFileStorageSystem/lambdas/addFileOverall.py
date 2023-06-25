@@ -123,7 +123,7 @@ def add_to_dynamo(event, mode):
     mode.set_id(item_id)
     if info_dict is None or info_dict['filename'] is None or info_dict['username'] is None or info_dict['folderName'] is None or info_dict['bucketName'] is None:
         return get_return('Invalid parameters', 400)
-    
+    info_dict['filename'] = info_dict['username'] + '-' + info_dict['filename']
     table = dynamodb.Table('bivuja-table')
     response = table.scan(
         FilterExpression='filename = :filename and folderName = :folderName and bucketName = :bucketName AND #usr = :giver',
@@ -283,8 +283,9 @@ def add_to_s3(event, mode):
     
 
     try:
-        send_email(event['headers']['useremail'],'Successfully added a file with name: '+ file_name, 'Successfully added a file with name: '+ file_name)
         response = s3.put_object(Bucket=bucket_name, Key=file_name, Body = body)
+        send_email(event['headers']['useremail'],'Successfully added a file with name: '+ file_name, 'Successfully added a file with name: '+ file_name)
+
         return get_return('File uploaded successfully!', 200)
     except Exception as e:
         retval = get_item_by_id_consistency(item_id)
