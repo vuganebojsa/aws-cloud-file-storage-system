@@ -121,9 +121,10 @@ def add_to_dynamo(event, mode):
     item_id = str(uuid.uuid4())
     dynamodb = boto3.resource('dynamodb')
     mode.set_id(item_id)
-    if info_dict is None or info_dict['filename'] is None or info_dict['username'] is None or info_dict['folderName'] is None or info_dict['bucketName'] is None:
+    if info_dict is None or info_dict['filename'] is None or info_dict['username'] is None or info_dict['bucketName'] is None:
         return get_return('Invalid parameters', 400)
-    info_dict['filename'] = info_dict['username'] + '-' + info_dict['filename']
+    if info_dict['folderName'] == '':
+        info_dict['filename'] = info_dict['username'] + '-' + info_dict['filename']
     table = dynamodb.Table('bivuja-table')
     response = table.scan(
         FilterExpression='filename = :filename and folderName = :folderName and bucketName = :bucketName AND #usr = :giver',
