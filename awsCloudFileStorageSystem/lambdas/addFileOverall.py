@@ -77,6 +77,20 @@ def delete_item_from_dynamo_db_table(item):
         return get_return('Something went wrong with deleting file.', 400)
     return None
 
+def delete_from_consistency(item_id):
+    dynamodb = boto3.client('dynamodb')
+    try:
+        dynamodb.delete_item(
+            TableName='consistency-bivuja-table',
+            Key={
+                'id': {'S': item_id},
+            }
+        )
+        return get_return('File deleted successfully', 200)
+    except Exception as e:
+       return get_return('Something went wrong. Key error.', 400)
+
+
 def revert_to_previous_version(item):
     table = dynamodb.Table('bivuja-table')
     try:
@@ -112,7 +126,7 @@ def post_file(event, context):
         response = add_to_s3(event, mode)
     else:
         send_email(event['headers']['useremail'],'Failed to upload file:' + file_name, 'Failed to upload file:' + file_name)
-    
+
     return response
 
 

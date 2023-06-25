@@ -61,18 +61,33 @@ def delete_item_from_dynamo_db_table(item):
         return get_return('Something went wrong with deleting file.', 400)
     return None
 
+def delete_from_consistency(item_id):
+    dynamodb = boto3.client('dynamodb')
+    try:
+        dynamodb.delete_item(
+            TableName='consistency-bivuja-table',
+            Key={
+                'id': {'S': item_id},
+            }
+        )
+        return get_return('File deleted successfully', 200)
+    except Exception as e:
+       return get_return('Something went wrong. Key error.', 400)
+
+
 
 def folder_exists(event):
     table = dynamodb.Table('folder-bivuja-table')
     response = table.scan(
-        FilterExpression='foldername = :foldername and path = :path and #usr = :giver',
+        FilterExpression='foldername = :foldername and #pth = :path and #usr = :giver',
         ExpressionAttributeValues={
             ':foldername': event['foldername'],
             ':giver': event['username'],
             ':path':event['path']
         },
         ExpressionAttributeNames={
-            '#usr': 'username'
+            '#usr': 'username',
+            "#pth":'path'
         }   )
     items = response['Items']
     if len(items) > 0:

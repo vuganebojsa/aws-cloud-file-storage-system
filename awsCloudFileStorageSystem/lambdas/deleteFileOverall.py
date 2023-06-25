@@ -17,6 +17,20 @@ def save_item_to_destination_table(item):
     return None
     
 
+def delete_from_consistency(item_id):
+    dynamodb = boto3.client('dynamodb')
+    try:
+        dynamodb.delete_item(
+            TableName='consistency-bivuja-table',
+            Key={
+                'id': {'S': item_id},
+            }
+        )
+        return get_return('File deleted successfully', 200)
+    except Exception as e:
+       return get_return('Something went wrong. Key error.', 400)
+
+
 def get_item_by_id(item_id):
     
     table_name = 'bivuja-table'
@@ -53,14 +67,18 @@ def save_item_to_dynamodb(item):
 def delete_file(event, context):
     # filename as base64 coded bcz of paths
     # /{bucket}/{id}/{username}/{filename}
-    file_name = base64.b64decode(event['pathParameters']['filename']).decode('utf-8')
-
+    try:
+        file_name = base64.b64decode(event['pathParameters']['filename']).decode('utf-8')
+    except Exception as e:
+        return get_return('File name is not in valid format.', 400)
+    
     response = delete_from_dynamo(event)
     if response is None:
         response = delete_from_s3(event)
     else:
         send_email(event['headers']['useremail'],'Failed to delete file:' + file_name, 'Failed to delete file:' + file_name)
-
+    if response['statusCode'] <= 204:
+        delete_from_consistency(event['pathParameters']['id'])
     return response
 
 
@@ -70,9 +88,11 @@ def delete_from_dynamo(event):
         return get_return('Failed to delete file. Invalid parameters', 400)
 
     item_to_save = get_item_by_id(file_id)
+    if item_to_save is None:
+        return get_return('FIle doesnt exist.', 400)
     retval = save_item_to_destination_table(item_to_save)
     if retval is not None:
-        return get_return('Invalid file id. Please try again.', 401)
+        return get_return('Invalid file id. Please try again.', 400)
     
     dynamodb = boto3.client('dynamodb')
     try:
