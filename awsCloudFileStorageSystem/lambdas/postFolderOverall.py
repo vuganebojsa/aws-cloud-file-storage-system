@@ -126,7 +126,7 @@ def add_to_s3(event):
     info_dict = json.loads(info)
     if info_dict['foldername'] is None or info_dict['username'] is None or info_dict['path'] is None:
         return get_return('Failed to add folder. Missing params', 400)
-    if info_dict is None or info_dict['foldername'] is None or info_dict['username']:
+    if info_dict is None or info_dict['foldername'] is None or info_dict['username'] is None:
         return get_return('Failed to upload to s3. Invalid path', 400)
     fullpath = ''
     # maybe add / at the end
