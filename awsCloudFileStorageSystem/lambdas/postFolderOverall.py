@@ -62,6 +62,23 @@ def delete_item_from_dynamo_db_table(item):
     return None
 
 
+def folder_exists(event):
+    table = dynamodb.Table('folder-bivuja-table')
+    response = table.scan(
+        FilterExpression='foldername = :foldername and path = :path and #usr = :giver',
+        ExpressionAttributeValues={
+            ':foldername': event['foldername'],
+            ':giver': event['username'],
+            ':path':event['path']
+        },
+        ExpressionAttributeNames={
+            '#usr': 'username'
+        }   )
+    items = response['Items']
+    if len(items) > 0:
+        return True
+    return False
+
 def post_folder(event, context):
     # filename as base64 coded bcz of paths
     # in event body we have now fileContent as filed in dictionary
@@ -81,6 +98,8 @@ def add_to_dynamo(event):
     info_dict = json.loads(info)
     if info_dict['foldername'] is None or info_dict['username'] is None or info_dict['path'] is None:
         return get_return('Failed to add folder. Missing params', 400)
+    if folder_exists(info_dict):
+        return get_return('Folder already exists.', 400)
     item_id = str(uuid.uuid4())
     try:
         info_dict['id'] = item_id

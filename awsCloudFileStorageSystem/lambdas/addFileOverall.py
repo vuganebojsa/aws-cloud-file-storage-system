@@ -112,7 +112,7 @@ def post_file(event, context):
         response = add_to_s3(event, mode)
     else:
         send_email(event['headers']['useremail'],'Failed to upload file:' + file_name, 'Failed to upload file:' + file_name)
-
+    
     return response
 
 
