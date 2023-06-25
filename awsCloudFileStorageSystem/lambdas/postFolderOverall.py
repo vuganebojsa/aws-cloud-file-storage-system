@@ -131,9 +131,9 @@ def add_to_s3(event):
     fullpath = ''
     # maybe add / at the end
     if info_dict['path'] is not None and info_dict['path'] != '':
-        fullpath = info_dict['username'] + '-' + info_dict['path'] + info_dict['foldername']
+        fullpath = info_dict['username'] + '-' + info_dict['path'] + info_dict['foldername'] + '/'
     else:
-        fullpath = info_dict['username'] + '-' + info_dict['foldername']
+        fullpath = info_dict['username'] + '-' + info_dict['foldername'] + '/'
     
 
     # Create the folder (prefix) in the S3 bucket
