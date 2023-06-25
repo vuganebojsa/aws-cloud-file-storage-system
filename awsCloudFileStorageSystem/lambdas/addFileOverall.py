@@ -125,7 +125,7 @@ def post_file(event, context):
     if response['statusCode'] <= 204:
         response = add_to_s3(event, mode)
     else:
-        send_email(event['headers']['useremail'],'Failed to upload file:' + file_name, 'Failed to upload file:' + file_name)
+        publish_sns(event['headers']['useremail'],'Failed to upload file:' + file_name, 'Failed to upload file:' + file_name)
 
     delete_from_consistency(mode.get_id())
     return response
@@ -303,7 +303,7 @@ def add_to_s3(event, mode):
 
     try:
         response = s3.put_object(Bucket=bucket_name, Key=file_name, Body = body)
-        send_email(event['headers']['useremail'],'Successfully added a file with name: '+ file_name, 'Successfully added a file with name: '+ file_name)
+        publish_sns(event['headers']['useremail'],'Successfully added a file with name: '+ file_name, 'Successfully added a file with name: '+ file_name)
 
         return get_return('File uploaded successfully!', 200)
     except Exception as e:
@@ -315,6 +315,23 @@ def add_to_s3(event, mode):
         return get_return('Key error. File upload failed.', 400)
 
 
+sns_client = boto3.client("sns")
+
+def publish_sns(useremail, subject, content):
+    try:      
+        sns_client.publish(
+            TopicArn='arn:aws:sns:eu-central-1:405601640017:MyFileTopic',
+            Message=json.dumps(
+                {
+                    "event": "delete",
+                    "receiver": useremail,
+                    "subject": subject,
+                    "content": content
+                }
+            ),
+        )
+    except Exception as e:
+        print(e)
 
 def send_email(recipient, subject, message):
     client = boto3.client('ses', region_name='eu-central-1')  

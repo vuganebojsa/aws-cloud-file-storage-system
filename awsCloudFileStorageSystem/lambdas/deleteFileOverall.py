@@ -3,6 +3,7 @@ import boto3
 import base64
 
 dynamodb = boto3.resource('dynamodb')
+sns_client = boto3.client("sns")
 
 
 def save_item_to_destination_table(item):
@@ -67,6 +68,7 @@ def save_item_to_dynamodb(item):
 def delete_file(event, context):
     # filename as base64 coded bcz of paths
     # /{bucket}/{id}/{username}/{filename}
+    file_name = ''
     try:
         file_name = base64.b64decode(event['pathParameters']['filename']).decode('utf-8')
     except Exception as e:
@@ -76,11 +78,29 @@ def delete_file(event, context):
     if response is None:
         response = delete_from_s3(event)
     else:
-        send_email(event['headers']['useremail'],'Failed to delete file:' + file_name, 'Failed to delete file:' + file_name)
+        publish_sns(event['headers']['useremail'], "File " + file_name + " failed to delete!", "File " + file_name + " failed to delete!")
+
+        #send_email(event['headers']['useremail'],'Failed to delete file:' + file_name, 'Failed to delete file:' + file_name)
     if response['statusCode'] <= 204:
         delete_from_consistency(event['pathParameters']['id'])
     return response
 
+
+def publish_sns(useremail, subject, content):
+    try:      
+        sns_client.publish(
+            TopicArn='arn:aws:sns:eu-central-1:405601640017:MyFileTopic',
+            Message=json.dumps(
+                {
+                    "event": "delete",
+                    "receiver": useremail,
+                    "subject": subject,
+                    "content": content
+                }
+            ),
+        )
+    except Exception as e:
+        print(e)
 
 def delete_from_dynamo(event):
     file_id = event['pathParameters']['id']
@@ -113,7 +133,9 @@ def delete_from_s3(event):
     if file_name is None:
         item = get_item_by_id_consistency(file_id)
         db_cons = save_item_to_dynamodb(item)
-        send_email(event['headers']['useremail'],'Failed to delete file:' + file_name, 'Failed to delete file:' + file_name)
+        publish_sns(event['headers']['useremail'], "File " + file_name + " failed to delete!", "File " + file_name + " failed to delete!")
+
+        #send_email(event['headers']['useremail'],'Failed to delete file:' + file_name, 'Failed to delete file:' + file_name)
 
         return get_return('File failed to delete.', 401)
 
@@ -126,14 +148,19 @@ def delete_from_s3(event):
             item = get_item_by_id_consistency(file_id)
             db_cons = save_item_to_dynamodb(item)
             if db_cons['ResponseMetadata']['HTTPStatusCode'] == 200:
-                send_email(event['headers']['useremail'],'Failed to delete file:' + file_name, 'Failed to delete file:' + file_name)
+                publish_sns(event['headers']['useremail'], "File " + file_name + " failed to delete!", "File " + file_name + " failed to delete!")
+
+                #send_email(event['headers']['useremail'],'Failed to delete file:' + file_name, 'Failed to delete file:' + file_name)
 
                 return get_return('Failde to delete file.', 401)
             else:
-                send_email(event['headers']['useremail'],'Failed to delete file:' + file_name, 'Failed to delete file:' + file_name)
+                publish_sns(event['headers']['useremail'], "File " + file_name + " failed to delete!", "File " + file_name + " failed to delete!")
+
+                #send_email(event['headers']['useremail'],'Failed to delete file:' + file_name, 'Failed to delete file:' + file_name)
                 return get_return('Something went wrong.', 500)
 
-        send_email(event['headers']['useremail'],'Successfully deleted a file with name:' + file_name, 'Successfully deleted a file with name:' + file_name)
+        publish_sns(event['headers']['useremail'], "File " + file_name + " deleted successfully!", "File " + file_name + " deleted successfully!")
+        #send_email(event['headers']['useremail'],'Successfully deleted a file with name:' + file_name, 'Successfully deleted a file with name:' + file_name)
 
         return get_return('File deleted successfully.', 200)
     

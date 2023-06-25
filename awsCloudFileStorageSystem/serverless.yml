@@ -19,6 +19,9 @@ provider:
         - cognito-idp:AdminInitiateAuth
         - cognito-idp:AdminCreateUser
         - cognito-idp:AdminSetUserPassword
+        - sns:Publish 
+        - sns:CreateTopic
+        - sns:Subscribe
         - ses:*
       Resource: '*'
 
@@ -261,6 +264,10 @@ functions:
           authorizer: 
              type: COGNITO_USER_POOLS
              authorizerId: {Ref: ApiGatewayAuthorizer}
+  notifyUser:
+    handler: lambdas.notifyUser.notify
+    events:
+      - sns: MyFileTopic
 
 resources:
   Resources:

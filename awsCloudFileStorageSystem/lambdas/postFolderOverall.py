@@ -116,7 +116,7 @@ def post_folder(event, context):
     if response['statusCode'] <= 204:
         response = add_to_s3(event)
     else:
-        send_email(event['headers']['useremail'],'Failed to upload folder' , 'Failed to upload folder')
+        publish_sns(event['headers']['useremail'],'Failed to upload folder' , 'Failed to upload folder')
     delete_from_consistency(mode.get_id())
     return response
 
@@ -215,13 +215,30 @@ def add_to_s3(event):
                     return get_return('Folder failed to upload', 400)
                 except Exception as e:
                     return get_return('Failed to upload folder.', 500)
-        send_email(event['headers']['useremail'],'Successfully posted a folder with name ' + info_dict['foldername'], 'Successfully posted a folder with name ' + info_dict['foldername'])
+        publish_sns(event['headers']['useremail'],'Successfully posted a folder with name ' + info_dict['foldername'], 'Successfully posted a folder with name ' + info_dict['foldername'])
 
         return get_return('Folder uploaded successfully', 200)
     except Exception as e:
        return get_return('Failed to upload to s3', 500)
 
 
+sns_client = boto3.client("sns")
+
+def publish_sns(useremail, subject, content):
+    try:      
+        sns_client.publish(
+            TopicArn='arn:aws:sns:eu-central-1:405601640017:MyFileTopic',
+            Message=json.dumps(
+                {
+                    "event": "delete",
+                    "receiver": useremail,
+                    "subject": subject,
+                    "content": content
+                }
+            ),
+        )
+    except Exception as e:
+        print(e)
 
 def send_email(recipient, subject, message):
     client = boto3.client('ses', region_name='eu-central-1')  
