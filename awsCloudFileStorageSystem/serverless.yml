@@ -225,6 +225,42 @@ functions:
           authorizer: 
              type: COGNITO_USER_POOLS
              authorizerId: {Ref: ApiGatewayAuthorizer}
+  addFileOveral:
+    handler: lambdas/addFileOverall.post_file
+    events:
+      - http:
+          path: add-file-overall/{bucket}/{filename}
+          method: POST
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+  addFolderOverall:
+    handler: lambdas/postFolderOverall.post_folder
+    events:
+      - http:
+          path: post-folder-overall/
+          method: POST
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+  deleteFileOverall:
+    handler: lambdas/deleteFileOverall.delete_file
+    events:
+      - http:
+          path: delete-file-overall/{bucket}/{username}/{filename}/{id}
+          method: DELETE
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
 
 resources:
   Resources:
