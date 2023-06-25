@@ -127,6 +127,7 @@ def post_file(event, context):
     else:
         send_email(event['headers']['useremail'],'Failed to upload file:' + file_name, 'Failed to upload file:' + file_name)
 
+    delete_from_consistency(mode.get_id())
     return response
 
 

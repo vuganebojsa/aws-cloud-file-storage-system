@@ -4,6 +4,18 @@ import base64
 import uuid
 
 dynamodb = boto3.resource('dynamodb')
+class AddEditMode(object):
+    def __init__(self, mode, item_id):
+        self.mode = mode
+        self.item_id = item_id
+    def get_mode(self):
+        return self.mode
+    def set_mode(self, mode):
+        self.mode = mode
+    def get_id(self):
+        return self.item_id
+    def set_id(self, mode):
+        self.item_id = mode
 
 def save_item_to_destination_table(item, mode):
     destination_table_name = 'consistency-bivuja-table'
@@ -97,17 +109,19 @@ def folder_exists(event):
 def post_folder(event, context):
     # filename as base64 coded bcz of paths
     # in event body we have now fileContent as filed in dictionary
-    response = add_to_dynamo(event)
+    mode = AddEditMode('add', '')
+    response = add_to_dynamo(event, mode)
+    
     print(response)
     if response['statusCode'] <= 204:
         response = add_to_s3(event)
     else:
         send_email(event['headers']['useremail'],'Failed to upload folder' , 'Failed to upload folder')
-
+    delete_from_consistency(mode.get_id())
     return response
 
 
-def add_to_dynamo(event):
+def add_to_dynamo(event, mode):
     dynamodb_client = boto3.client('dynamodb')
     info = event['body']
     info_dict = json.loads(info)
@@ -116,6 +130,7 @@ def add_to_dynamo(event):
     if folder_exists(info_dict):
         return get_return('Folder already exists.', 400)
     item_id = str(uuid.uuid4())
+    mode.set_id(item_id)
     try:
         info_dict['id'] = item_id
         save_item_to_destination_table(info_dict, 'add')
