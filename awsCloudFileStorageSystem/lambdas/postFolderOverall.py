@@ -5,9 +5,9 @@ import uuid
 
 dynamodb = boto3.resource('dynamodb')
 
-def save_item_to_destination_table(item):
+def save_item_to_destination_table(item, mode):
     destination_table_name = 'consistency-bivuja-table'
-    item['mode'] = 'add'
+    item['mode'] = mode
 
     destination_table = dynamodb.Table(destination_table_name)
     try:
@@ -18,7 +18,7 @@ def save_item_to_destination_table(item):
 
 def get_item_by_id(item_id):
     
-    table_name = 'bivuja-table'
+    table_name = 'folder-bivuja-table'
     table = dynamodb.Table(table_name)
 
     response = table.get_item(
@@ -43,23 +43,33 @@ def get_item_by_id_consistency(item_id):
     return item
 
 def save_item_to_dynamodb(item):
-    table = dynamodb.Table('bivuja-table')
+    table = dynamodb.Table('folder-bivuja-table')
 
     response = table.put_item(Item=item)
     return response
 
+def delete_item_from_dynamo_db_table(item):
+    dynamodb = boto3.client('dynamodb')
+    try:
+        dynamodb.delete_item(
+                TableName='folder-bivuja-table',
+                Key={
+                    'id': {'S': item['id']},
+                }
+            )
+    except Exception as e:
+        return get_return('Something went wrong with deleting file.', 400)
+    return None
+
 
 def post_folder(event, context):
     # filename as base64 coded bcz of paths
-    # /{bucket}/{filename}
     # in event body we have now fileContent as filed in dictionary
-    file_name = base64.b64decode(event['pathParameters']['filename']).decode('utf-8')
-
     response = add_to_dynamo(event)
-    if response is None:
+    if response['code'] <= 204:
         response = add_to_s3(event)
     else:
-        send_email(event['headers']['useremail'],'Failed to upload file:' + file_name, 'Failed to upload file:' + file_name)
+        send_email(event['headers']['useremail'],'Failed to upload folder' , 'Failed to upload folder')
 
     return response
 
@@ -69,11 +79,13 @@ def add_to_dynamo(event):
     info = event['body']
     info_dict = json.loads(info)
     if info_dict['foldername'] is None or info_dict['username'] is None or info_dict['path'] is None:
-        return {
-            'statusCode': 400,
-            'body': f'Failed to post folder. Please enter all fields.'
-        }
+        return get_return('Failed to add folder. Missing params', 400)
     item_id = str(uuid.uuid4())
+    try:
+        info_dict['id'] = item_id
+        save_item_to_destination_table(info_dict, 'add')
+    except Exception as e:
+        return get_return('Failed to upload folder to dynamo. Key error', 400)
     try:
         response = dynamodb_client.put_item(
             TableName='folder-bivuja-table',
@@ -92,35 +104,72 @@ def add_to_dynamo(event):
                 }
             }
         )
-        return {
-            'statusCode': 200,
-            'body': 'Folder uploaded successfully.'
-        }
+        return get_return('Successfully uploaded a new folder.', 200)
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': f'Failed to upload folder: {str(e)}'
-        }
+
+        return get_return('Failed to upload folder. Key Error', 400)
+    
 
 def add_to_s3(event):
-    s3 = boto3.client('s3')
-    bucket_name = event['pathParameters']['bucket']
-    file_name = base64.b64decode(event['pathParameters']['filename']).decode('utf-8')
-
-    # file content is the file itself coded in base64
-
-    info_dict = json.loads(event['body'])
-    body = base64.b64decode(info_dict['fileContent'])
+    region = 'eu-central-1'
     
-    if body is None or event['headers']['useremail'] is None:
-        return get_return('Failed to upload folder to S3 bucket.', 400)
-    try:
-        send_email(event['headers']['useremail'],'Successfully added a file with name: '+ file_name, 'Successfully added a file with name: '+ file_name)
+    # Set the name of the S3 bucket
+    bucket_name = 'bivuja-bucket'
+    
+    # Set the desired directory path for the new folder
+    #slash/slike
+    
+    # Create the S3 client
+    s3 = boto3.client('s3', region_name=region)
+    info = event['body']
+    info_dict = json.loads(info)
+    if info_dict['foldername'] is None or info_dict['username'] is None or info_dict['path'] is None:
+        return get_return('Failed to add folder. Missing params', 400)
+    if info_dict is None or info_dict['foldername'] is None or info_dict['username']:
+        return get_return('Failed to upload to s3. Invalid path', 400)
+    fullpath = ''
+    # maybe add / at the end
+    if info_dict['path'] is not None and info_dict['path'] != '':
+        fullpath = info_dict['username'] + '-' + info_dict['path'] + info_dict['foldername']
+    else:
+        fullpath = info_dict['username'] + '-' + info_dict['foldername']
+    
 
-        response = s3.put_object(Bucket=bucket_name, Key=file_name, Body = body)
-        return get_return('File uploaded successfully!', 200)
+    # Create the folder (prefix) in the S3 bucket
+    try:
+        response = s3.put_object(Bucket=bucket_name, Key=fullpath)
+        response_code = response['ResponseMetadata']['HTTPStatusCode']
+        if response_code > 204:
+            dynamodb = boto3.resource('dynamodb')
+            table = dynamodb.Table('folder-bivuja-table')
+            new_rep = table.scan(
+                FilterExpression='foldername = :foldername AND path = :path AND #usr = :giver',
+                ExpressionAttributeValues={
+                    ':foldername': info_dict['foldername'],
+                    ':giver': info_dict['username'],
+                    ':path':info_dict['path']
+                },
+                ExpressionAttributeNames={
+                    '#usr': 'username'
+                }   )
+            items = new_rep['Items']
+            if len(items) != 0:
+                dynamodb = boto3.client('dynamodb')
+                try:
+                    dynamodb.delete_item(
+                        TableName='folder-bivuja-table',
+                        Key={
+                            'id': {'S': items[0]['id']},
+                        }
+                    )
+                    return get_return('Folder failed to upload', 400)
+                except Exception as e:
+                    return get_return('Failed to upload folder.', 500)
+        send_email(event['headers']['useremail'],'Successfully posted a folder with name ' + info_dict['foldername'], 'Successfully posted a folder with name ' + info_dict['foldername'])
+
+        return get_return('Folder uploaded successfully', 200)
     except Exception as e:
-       return get_return('Key error. File upload failed.', 400)
+       return get_return('Failed to upload to s3', 500)
 
 
 
