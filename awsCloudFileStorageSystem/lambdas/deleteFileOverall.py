@@ -8,7 +8,7 @@ dynamodb = boto3.resource('dynamodb')
 def save_item_to_destination_table(item):
     destination_table_name = 'consistency-bivuja-table'
     item['mode'] = 'delete'
-    
+
     destination_table = dynamodb.Table(destination_table_name)
     try:
         response = destination_table.put_item(Item=item)
@@ -50,7 +50,6 @@ def save_item_to_dynamodb(item):
 
 
 def delete_file(event, context):
-    # Replace 'YOUR_BUCKET_NAME' with your actual bucket name
     # filename as base64 coded bcz of paths
     # /{bucket}/{id}/{username}/{filename}
     file_name = base64.b64decode(event['pathParameters']['filename']).decode('utf-8')
@@ -122,7 +121,7 @@ def delete_from_s3(event):
     except Exception as e:
         item = get_item_by_id(file_id)
         db_cons = save_item_to_dynamodb(item)
-        return get_return('Failed to delete file from S3 bucket.', 500)
+        return get_return('Failed to delete file from S3 bucket. Key error', 401)
 
 
 
