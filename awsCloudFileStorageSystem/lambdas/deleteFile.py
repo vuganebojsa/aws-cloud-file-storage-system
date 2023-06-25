@@ -74,7 +74,7 @@ def delete_file(event, context):
 
 
 def get_return(body, code):
-    {
+    return {
             'headers': {
                 'Content-Type':'application/json',
                 'Access-Control-Allow-Methods':'*',

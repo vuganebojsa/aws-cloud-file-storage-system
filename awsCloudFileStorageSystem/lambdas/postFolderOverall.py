@@ -66,7 +66,8 @@ def post_folder(event, context):
     # filename as base64 coded bcz of paths
     # in event body we have now fileContent as filed in dictionary
     response = add_to_dynamo(event)
-    if response['code'] <= 204:
+    print(response)
+    if response['statusCode'] <= 204:
         response = add_to_s3(event)
     else:
         send_email(event['headers']['useremail'],'Failed to upload folder' , 'Failed to upload folder')
@@ -191,7 +192,7 @@ def send_email(recipient, subject, message):
     return response['MessageId']
 
 def get_return(body, code):
-    {
+    return {
             'headers': {
                 'Content-Type':'application/json',
                 'Access-Control-Allow-Methods':'*',

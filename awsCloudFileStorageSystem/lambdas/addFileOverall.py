@@ -105,7 +105,7 @@ def post_file(event, context):
     file_name = base64.b64decode(event['pathParameters']['filename']).decode('utf-8')
     mode = AddEditMode('add', '')
     response = add_to_dynamo(event, mode)
-    if response['code'] <= 204:
+    if response['statusCode'] <= 204:
         response = add_to_s3(event, mode)
     else:
         send_email(event['headers']['useremail'],'Failed to upload file:' + file_name, 'Failed to upload file:' + file_name)
@@ -313,7 +313,7 @@ def send_email(recipient, subject, message):
 
     return response['MessageId']
 def get_return(body, code):
-    {
+    return {
             'headers': {
                 'Content-Type':'application/json',
                 'Access-Control-Allow-Methods':'*',

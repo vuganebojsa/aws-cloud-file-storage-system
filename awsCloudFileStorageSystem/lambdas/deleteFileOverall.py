@@ -64,8 +64,6 @@ def delete_file(event, context):
 
 
 def delete_from_dynamo(event):
-    bucket_name = event['pathParameters']['bucket']
-    username = event['pathParameters']['username']
     file_id = event['pathParameters']['id']
     if file_id is None:
         return get_return('Failed to delete file. Invalid parameters', 400)
@@ -143,7 +141,7 @@ def send_email(recipient, subject, message):
 
     return response['MessageId']
 def get_return(body, code):
-    {
+    return {
             'headers': {
                 'Content-Type':'application/json',
                 'Access-Control-Allow-Methods':'*',
