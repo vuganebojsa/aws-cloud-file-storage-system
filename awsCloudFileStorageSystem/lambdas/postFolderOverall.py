@@ -7,7 +7,7 @@ dynamodb = boto3.resource('dynamodb')
 
 def save_item_to_destination_table(item, mode):
     destination_table_name = 'consistency-bivuja-table'
-    item['mode'] = mode
+    item['mode'] = 'add'
 
     destination_table = dynamodb.Table(destination_table_name)
     try:
