@@ -25,7 +25,7 @@ provider:
         - cognito-idp:AdminSetUserSettings
         - cognito-idp:ListUsers
         - cognito-idp:AdminSetUserPassword
-        - cognito-idp:ConfirmSignUp
+        - cognito-idp:AdminConfirmSignUp
         - sns:Publish 
         - sns:CreateTopic
         - sns:Subscribe
@@ -266,6 +266,18 @@ functions:
           request:
             passThrought: WHEN_NO_MATCH
           cors: true
+  confirmDeclineInvitationMember:
+    handler: lambdas/confirmDeclineInvitation.confirm_decline_invitation
+    events:
+      - http:
+          path: confirm-decline-invitation/
+          method: POST
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
   addFileOveral:
     handler: lambdas/addFileOverall.post_file
     events:
