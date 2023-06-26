@@ -31,6 +31,7 @@ provider:
         - sns:CreateTopic
         - sns:Subscribe
         - ses:*
+        - states:StartExecution
       Resource: '*'
 
 
