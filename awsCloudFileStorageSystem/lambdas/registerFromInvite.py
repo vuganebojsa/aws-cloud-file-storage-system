@@ -34,26 +34,41 @@ def register_from_invite(event, context):
     if 'Item' not in resp:
         return get_return('Invalid email address. Please try again', 400)
     
-    item = json.loads(resp['Item'])
-    if item['status'] != 'pending':
+    item = resp['Item']
+    id_value = item['id']['S'].split('/')[0]
+    status_value = item['status']['S']
+    res = {'id':id_value, 'status':status_value}
+    if res['status'] != 'pending':
         return get_return('This request has already been processed.', 400)
 
 
     user_attributes = [
-    {'given_name': firstName, 'family_name':lastName, 'birthdate': dateOfBirth, email:email},]
+     {'Name': 'given_name', 'Value': firstName},
+    {'Name': 'family_name', 'Value': lastName},
+    {'Name': 'birthdate', 'Value': dateOfBirth},
+    {'Name': 'email', 'Value': email}]
 
     try:
-        response = cognito_client.sign_up(
-            ClientId='eu-central-1_JywQCrS95',  
+        response = cognito_client.admin_create_user(
+            UserPoolId='eu-central-1_JywQCrS95',
+            Username=username,
+            TemporaryPassword=password,
+            UserAttributes=user_attributes,
+            MessageAction='SUPPRESS',
+            DesiredDeliveryMediums=['EMAIL']
+        )
+        resp = cognito_client.admin_set_user_password(
+            UserPoolId='eu-central-1_JywQCrS95',
             Username=username,
             Password=password,
-            UserAttributes=user_attributes,
-            ValidationData=[]
+            Permanent=True
         )
-
+        print(response)
+        
         return get_return('Registration successfully. Wait for the inviter to respond.', 200)
     except Exception as e:
-        return get_return('Failed to register. Invalid attributes.', 400)
+        print(e)
+        return get_return('Failed to register. Invalid attributes. ', 400)
 
 
 

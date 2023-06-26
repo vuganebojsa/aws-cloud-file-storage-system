@@ -21,8 +21,11 @@ provider:
         - s3:*
         - cognito-idp:AdminInitiateAuth
         - cognito-idp:AdminCreateUser
+        - cognito-idp:AdminUpdateUserAttributes
+        - cognito-idp:AdminSetUserSettings
         - cognito-idp:ListUsers
         - cognito-idp:AdminSetUserPassword
+        - cognito-idp:ConfirmSignUp
         - sns:Publish 
         - sns:CreateTopic
         - sns:Subscribe
