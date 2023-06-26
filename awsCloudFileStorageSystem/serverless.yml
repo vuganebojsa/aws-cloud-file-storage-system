@@ -34,14 +34,31 @@ provider:
       Resource: '*'
 
 
-# stepFunctions:
-#   stateMachines:
-#     familyMemberRegistration:
-#       name: 'Family Member Registration'
-#       events:
-#         - http:
-#             path: send_invite
-#             method: POST
+stepFunctions:
+  stateMachines:
+    familyMemberRegistration:
+      name: 'familymemberregistration'
+      definition:
+        Comment: "My Step Function"
+        StartAt: SendInvite
+        States:
+          SendInvite:
+            Type: Task
+            Resource: arn:aws:lambda:eu-central-1:123456789012:function:sendInviteToFamilyMember
+            Next: RegisterMember
+          RegisterMember:
+            Type: Task
+            Resource: arn:aws:lambda:eu-central-1:123456789012:function:sendInviteToFamilyMember
+            Retry:
+              - ErrorEquals:
+                  - States.ALL
+                IntervalSeconds: 5
+                MaxAttempts: 3
+            Next: ConfirmInvitation
+          ConfirmInvitation:
+            Type: Task
+            Resource: arn:aws:lambda:eu-central-1:123456789012:function:confirmDeclineInvitationMember
+            End: true
 
 functions:
   getFile:
@@ -322,6 +339,11 @@ functions:
 
 resources:
   Resources:
+    StepFunctionCloudWatchLogs:
+      Type: "AWS::Logs::LogGroup"
+      Properties:
+        LogGroupName: "/aws/stepfunctions/familyMemberRegistration"
+        RetentionInDays: 7
     ApiGatewayRestApi:
       Type: AWS::ApiGateway::RestApi
       Properties:
