@@ -254,6 +254,15 @@ functions:
           authorizer: 
              type: COGNITO_USER_POOLS
              authorizerId: {Ref: ApiGatewayAuthorizer}
+  registerMemberFromInvite:
+    handler: lambdas/registerFromInvite.register_from_invite
+    events:
+      - http:
+          path: register-from-invite/
+          method: POST
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true
   addFileOveral:
     handler: lambdas/addFileOverall.post_file
     events:

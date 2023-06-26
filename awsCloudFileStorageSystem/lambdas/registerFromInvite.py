@@ -3,19 +3,9 @@ from .responses import *
 import boto3
 import base64
 
-def register_user(event, context):
+def register_from_invite(event, context):
     cognito_client = boto3.client('cognito-idp')
-    info = event['body']
-
-
-    #nebojsa@gmail.com/bogdan@gmail.com                 
-    # mailInviter/mainFamilyMember
-    # splitujemo
-    # izvucemo inviter mail
-    # vidimo da li se podudara iz tela zahteva
-    # ako ne vrati mu 400 error
-    # proveriti da li je status pending, ako nije opet 400 error
-    # ako da smisljaj dalje logiku
+    info = json.loads(event['body'])
 
     if info is None:
         return get_return('Failed to register user. Missing body.', 400)
@@ -23,33 +13,47 @@ def register_user(event, context):
     username = info['username']
     password = info['password']
     email = info['email']
-    firstName = info['firstName']
-    lastName = info['lastName']
-    dateOfBirth = info['dateOfBirth']
+    firstName = info['name']
+    lastName = info['surname']
+    dateOfBirth = info['birthDate']
     inviterEmail = info['inviterEmail']
-    if username is None or password is None or email is None:
+    if username is None or password is None or email is None or firstName is None or lastName is None or dateOfBirth is None or inviterEmail is None:
         return get_return('Failed to register user, invalid params', 400)
     
+    usr = get_user_by_username(username)
+    if usr is not None:
+        return get_return('User with username: ' + username + ' already exists.', 400)
+
+    dynamodb = boto3.client('dynamodb')
+    resp = dynamodb.get_item(
+            TableName='invite-bivuja-table',
+            Key={
+                'id': {'S': inviterEmail + '/' + email}
+            }
+        )
+    if 'Item' not in resp:
+        return get_return('Invalid email address. Please try again', 400)
+    
+    item = resp['Item']
+    if item['status'] != 'pending':
+        return get_return('This request has already been processed.', 400)
+
+
     user_attributes = [
-    {'given_name': info['given_name'], 'family_name':info['family_name'], 'birthdate': info['birthdate'], email:info['email']},]
+    {'given_name': firstName, 'family_name':lastName, 'birthdate': dateOfBirth, email:email},]
 
     try:
         response = cognito_client.sign_up(
-            ClientId='your-client-id',  
+            ClientId='eu-central-1_JywQCrS95',  
             Username=username,
             Password=password,
             UserAttributes=user_attributes,
             ValidationData=[]
         )
-        return {
-            'statusCode': 200,
-            'body': 'User registered successfully.'
-        }
+
+        return get_return('Registration successfully. Wait for the inviter to respond.', 200)
     except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': f'Failed to register user: {str(e)}'
-        }
+        return get_return('Failed to register. Invalid attributes.', 400)
 
 
 
@@ -89,6 +93,21 @@ def get_user_by_email(email):
     response = client.list_users(
         UserPoolId='eu-central-1_JywQCrS95',
         Filter=f'email = "{email}"'
+    )
+    users = response['Users']
+    if users is None:
+        return None
+    if len(users) == 0:
+        return None
+    return 1
+
+
+def get_user_by_username(username):
+    client = boto3.client('cognito-idp', region_name='eu-central-1') 
+
+    response = client.list_users(
+        UserPoolId='eu-central-1_JywQCrS95',
+        Filter=f'username = "{username}"'
     )
     users = response['Users']
     if users is None:
