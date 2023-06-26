@@ -21,6 +21,7 @@ provider:
         - s3:*
         - cognito-idp:AdminInitiateAuth
         - cognito-idp:AdminCreateUser
+        - cognito-idp:ListUsers
         - cognito-idp:AdminSetUserPassword
         - sns:Publish 
         - sns:CreateTopic
@@ -29,14 +30,14 @@ provider:
       Resource: '*'
 
 
-stepFunctions:
-  stateMachines:
-    familyMemberRegistration:
-      name: 'Family Member Registration'
-      events:
-        - http:
-            path: send_invite
-            method: POST
+# stepFunctions:
+#   stateMachines:
+#     familyMemberRegistration:
+#       name: 'Family Member Registration'
+#       events:
+#         - http:
+#             path: send_invite
+#             method: POST
 
 functions:
   getFile:
@@ -235,6 +236,18 @@ functions:
       - http:
           path: delete-file-from-dynamo/{bucket}/{username}/{id}
           method: DELETE
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+  sendInviteToFamilyMember:
+    handler: lambdas/sendInvite.send_invite
+    events:
+      - http:
+          path: send-invite/
+          method: POST
           request:
             passThrought: WHEN_NO_MATCH
           cors: true
