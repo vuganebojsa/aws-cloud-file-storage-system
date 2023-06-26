@@ -2,6 +2,9 @@
 service: awscloudfilestoragesystem
 frameworkVersion: '3'
 
+plugins:
+  - serverless-step-functions
+
 provider:
   name: aws
   runtime: python3.9
@@ -24,6 +27,16 @@ provider:
         - sns:Subscribe
         - ses:*
       Resource: '*'
+
+
+stepFunctions:
+  stateMachines:
+    familyMemberRegistration:
+      name: 'Family Member Registration'
+      events:
+        - http:
+            path: send_invite
+            method: POST
 
 functions:
   getFile:
