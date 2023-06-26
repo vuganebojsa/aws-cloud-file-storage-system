@@ -36,7 +36,7 @@ def share_file(giver, receiver, path):
         )
         return get_return('File shared successfully', 200)
     except Exception as e:
-        return get_return('Failed to share data', 401)
+        return get_return('Failed to share data', 400)
     
 
 
@@ -131,7 +131,6 @@ def confirm_decline_invitation(event, context):
                     'Value':'true'
                 }]
             )
-            # promeniti status u tabeli!!!!!!!!!!!!
 
             all_files = get_all_files(inviter_email)
             for f in all_files:
@@ -141,7 +140,12 @@ def confirm_decline_invitation(event, context):
                 else:
                     share_file(giver_usr, user_username, f['username'] + '-' + f['filename'])
 
-
+            dynamodb.delete_item(
+                TableName='invite-bivuja-table',
+                Key={
+                    'id': {'S': inviter_email + '/' + family_email},
+                }
+             )
 
             send_email(family_email, inviter_email + ' has confirmed your account', inviter_email + ' has confirmed your account. You may acces all their files!')
 
@@ -152,7 +156,24 @@ def confirm_decline_invitation(event, context):
     else:
         # promeniti status u tabeli u declined
         # obrisati iz user poola
-        return get_return('The request has been declined. User not registered.', 200)
+        try:
+            resp = cognito_client.admin_delete_user(
+                UserPoolId='eu-central-1_JywQCrS95',
+                Username=user_username
+            )
+
+            dynamodb.delete_item(
+                TableName='invite-bivuja-table',
+                Key={
+                    'id': {'S': inviter_email + '/' + family_email},
+                }
+            )
+
+            return get_return('The request has been declined. User not registered.', 200)
+
+        except Exception as e:
+            print(e)
+            return get_return('Couldnt delete user from user pool.', 400)
   
 
 

@@ -23,6 +23,7 @@ provider:
         - cognito-idp:AdminCreateUser
         - cognito-idp:AdminUpdateUserAttributes
         - cognito-idp:AdminSetUserSettings
+        - cognito-idp:AdminDeleteUser
         - cognito-idp:ListUsers
         - cognito-idp:AdminSetUserPassword
         - cognito-idp:AdminConfirmSignUp
