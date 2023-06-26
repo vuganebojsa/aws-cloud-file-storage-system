@@ -63,7 +63,7 @@ def register_from_invite(event, context):
             Password=password,
             Permanent=True
         )
-        send_email(inviterEmail, 'Your family member with the email:' + email + ' has successfully registered!\nPlease confirm his sign up on the link below:\n http://localhost:4200/confirm-invite/' + email)
+        send_email(inviterEmail, 'Invited family member has registered. Please confirm.', 'Your family member with the email:' + email + ' has successfully registered!\nPlease confirm his sign up on the link below:\n http://localhost:4200/confirm-invite/' + email)
         
         return get_return('Registration successfully. Wait for the inviter to respond.', 200)
     except Exception as e:
