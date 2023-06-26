@@ -138,7 +138,7 @@ def confirm_decline_invitation(event, context):
                 if f['folderName'] != '':
                     share_file(giver_usr, user_username, f['folderName'] + '/' + f['filename'])
                 else:
-                    share_file(giver_usr, user_username, f['username'] + '-' + f['filename'])
+                    share_file(giver_usr, user_username, f['filename'])
 
             dynamodb.delete_item(
                 TableName='invite-bivuja-table',
