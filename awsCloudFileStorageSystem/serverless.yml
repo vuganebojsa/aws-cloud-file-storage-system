@@ -45,11 +45,11 @@ stepFunctions:
         States:
           SendInvite:
             Type: Task
-            Resource: arn:aws:lambda:eu-central-1:123456789012:function:sendInviteToFamilyMember
+            Resource: arn:aws:lambda:eu-central-1:405601640017:function:awscloudfilestoragesystem-dev-sendInviteToFamilyMember
             Next: RegisterMember
           RegisterMember:
             Type: Task
-            Resource: arn:aws:lambda:eu-central-1:123456789012:function:sendInviteToFamilyMember
+            Resource: arn:aws:lambda:eu-central-1:405601640017:function:awscloudfilestoragesystem-dev-registerMemberFromInvite
             Retry:
               - ErrorEquals:
                   - States.ALL
@@ -58,7 +58,7 @@ stepFunctions:
             Next: ConfirmInvitation
           ConfirmInvitation:
             Type: Task
-            Resource: arn:aws:lambda:eu-central-1:123456789012:function:confirmDeclineInvitationMember
+            Resource: arn:aws:lambda:eu-central-1:405601640017:function:awscloudfilestoragesystem-dev-confirmDeclineInvitationMember
             End: true
 
 functions:
@@ -117,18 +117,6 @@ functions:
           authorizer: 
              type: COGNITO_USER_POOLS
              authorizerId: {Ref: ApiGatewayAuthorizer}
-  sendInvite:
-    handler: lambdas/sendInvite.send_invite
-    events:
-      - http:
-          path: send-invite/
-          method: POST
-          cors: true
-          request:
-            passThrought: WHEN_NO_MATCH
-          authorizer: 
-              type: COGNITO_USER_POOLS
-              authorizerId: {Ref: ApiGatewayAuthorizer}
   postFileToFolder:
     handler: lambdas/postFileToFolder.post_file_to_folder
     events:
@@ -276,6 +264,7 @@ functions:
           authorizer: 
              type: COGNITO_USER_POOLS
              authorizerId: {Ref: ApiGatewayAuthorizer}
+
   registerMemberFromInvite:
     handler: lambdas/registerFromInvite.register_from_invite
     events:
