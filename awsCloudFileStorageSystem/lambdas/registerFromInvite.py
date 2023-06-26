@@ -34,7 +34,7 @@ def register_from_invite(event, context):
     if 'Item' not in resp:
         return get_return('Invalid email address. Please try again', 400)
     
-    item = resp['Item']
+    item = json.loads(resp['Item'])
     if item['status'] != 'pending':
         return get_return('This request has already been processed.', 400)
 
