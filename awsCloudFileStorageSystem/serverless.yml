@@ -41,14 +41,11 @@ stepFunctions:
       name: 'familymemberregistration'
       events:
         - http:
-            path: send-invite/
+            path: register-from-invite/
             method: POST
             request:
               passThrought: WHEN_NO_MATCH
             cors: true
-            authorizer: 
-              type: COGNITO_USER_POOLS
-              authorizerId: {Ref: ApiGatewayAuthorizer}
       # startuje u register member
       # status je pending
       # zatim lambda se izvrsava koja proverava npr 2 dana da li je status accepted ili declined
@@ -65,14 +62,36 @@ stepFunctions:
             Type: Task
             Resource: arn:aws:lambda:eu-central-1:405601640017:function:awscloudfilestoragesystem-dev-registerMemberFromInvite
             Retry:
-              - ErrorEquals:
-                  - States.ALL
-                IntervalSeconds: 5
-                MaxAttempts: 3
-            Next: ConfirmInvitation
-          ConfirmInvitation:
+            - ErrorEquals:
+              - States.TaskFailed
+              IntervalSeconds: 5
+              MaxAttempts: 3
+              BackoffRate: 2
+            Next: CheckIfStatusChanged
+          CheckIfStatusChanged:
             Type: Task
-            Resource: arn:aws:lambda:eu-central-1:405601640017:function:awscloudfilestoragesystem-dev-confirmDeclineInvitationMember
+            Resource: arn:aws:lambda:eu-central-1:405601640017:function:awscloudfilestoragesystem-dev-checkInvitationStatus
+            Retry:
+            - ErrorEquals:
+              - States.TaskFailed
+              IntervalSeconds: 15
+              MaxAttempts: 100
+              BackoffRate: 2
+            Next: CheckIfInvitationAccepted
+          CheckIfInvitationAccepted:
+            Type: Choice
+            Choices: 
+            - Variable: "$.status"
+              BooleanEquals: true
+              Next: ShareFilesToFamilyMember
+            Default: DeleteFamilyMemberFromDatabase
+          ShareFilesToFamilyMember:
+            Type: Task
+            Resource: arn:aws:lambda:eu-central-1:405601640017:function:awscloudfilestoragesystem-dev-shareFilesToFamilyMember
+            End: true
+          DeleteFamilyMemberFromDatabase:
+            Type: Task
+            Resource: arn:aws:lambda:eu-central-1:405601640017:function:awscloudfilestoragesystem-dev-deleteFamilyMemberFromDatabase
             End: true
 
 functions:
@@ -119,66 +138,6 @@ functions:
           authorizer: 
              type: COGNITO_USER_POOLS
              authorizerId: {Ref: ApiGatewayAuthorizer}
-  postFile:
-    handler: lambdas/postFile.post_file
-    events:
-      - http:
-          path: post-file/{bucket}/{filename}
-          method: POST
-          cors: true
-          request:
-            passThrought: WHEN_NO_MATCH
-          authorizer: 
-             type: COGNITO_USER_POOLS
-             authorizerId: {Ref: ApiGatewayAuthorizer}
-  postFileToFolder:
-    handler: lambdas/postFileToFolder.post_file_to_folder
-    events:
-      - http:
-          path: post-file-to-folder/{bucket}/{filename}
-          method: POST
-          cors: true
-          request:
-            passThrought: WHEN_NO_MATCH
-          authorizer: 
-             type: COGNITO_USER_POOLS
-             authorizerId: {Ref: ApiGatewayAuthorizer}
-  postFileLambda:
-    handler: lambdas/postFileDynamo.post_file_dynamo
-    events:
-      - http:
-          path: post-file-lambda/
-          method: POST
-          cors: true
-          authorizer: 
-             type: COGNITO_USER_POOLS
-             authorizerId: {Ref: ApiGatewayAuthorizer}
-          request:
-            passThrought: WHEN_NO_MATCH
-  postFolderLambda:
-    handler: lambdas/postFolder.post_folder_dynamo
-    events:
-      - http:
-          path: post-folder-lambda/
-          method: POST
-          cors: true
-          authorizer: 
-             type: COGNITO_USER_POOLS
-             authorizerId: {Ref: ApiGatewayAuthorizer}
-          request:
-            passThrought: WHEN_NO_MATCH
-  postFolderS3:
-    handler: lambdas/postFolderS3.post_folder_s3
-    events:
-      - http:
-          path: post-folder-s3/
-          method: POST
-          cors: true
-          authorizer: 
-             type: COGNITO_USER_POOLS
-             authorizerId: {Ref: ApiGatewayAuthorizer}
-          request:
-            passThrought: WHEN_NO_MATCH
   shareFile:
     handler: lambdas/shareFile.share_file
     events:
@@ -230,35 +189,11 @@ functions:
           authorizer: 
              type: COGNITO_USER_POOLS
              authorizerId: {Ref: ApiGatewayAuthorizer}
-  deleteFile:
-    handler: lambdas/deleteFile.delete_file
-    events:
-      - http:
-          path: delete-file-from-bucket/{bucket}/{filename}/{id}
-          method: DELETE
-          request:
-            passThrought: WHEN_NO_MATCH
-          cors: true
-          authorizer: 
-             type: COGNITO_USER_POOLS
-             authorizerId: {Ref: ApiGatewayAuthorizer}
   stopShareFile:
     handler: lambdas/stopShareFile.stop_share_file
     events:
       - http:
           path: stop-share-file/{id}
-          method: DELETE
-          request:
-            passThrought: WHEN_NO_MATCH
-          cors: true
-          authorizer: 
-             type: COGNITO_USER_POOLS
-             authorizerId: {Ref: ApiGatewayAuthorizer}
-  deleteFileDynamo:
-    handler: lambdas/deleteFileDynamo.delete_file_dynamo
-    events:
-      - http:
-          path: delete-file-from-dynamo/{bucket}/{username}/{id}
           method: DELETE
           request:
             passThrought: WHEN_NO_MATCH
@@ -281,13 +216,13 @@ functions:
 
   registerMemberFromInvite:
     handler: lambdas/registerFromInvite.register_from_invite
-    events:
-      - http:
-          path: register-from-invite/
-          method: POST
-          request:
-            passThrought: WHEN_NO_MATCH
-          cors: true
+    # events:
+    #   - http:
+    #       path: register-from-invite/
+    #       method: POST
+    #       request:
+    #         passThrought: WHEN_NO_MATCH
+    #       cors: true
   confirmDeclineInvitationMember:
     handler: lambdas/confirmDeclineInvitation.confirm_decline_invitation
     events:
@@ -300,6 +235,12 @@ functions:
           authorizer: 
              type: COGNITO_USER_POOLS
              authorizerId: {Ref: ApiGatewayAuthorizer}
+  checkInvitationStatus:
+    handler: lambdas/checkInvitationStatus.check_invitation_status
+  shareFilesToFamilyMember:
+    handler: lambdas/shareFilesToFamilyMember.share_files_to_family_member
+  deleteFamilyMemberFromDatabase:
+    handler: lambdas/deleteFamilyMemberFromDatabase.delete_family_member_from_database
   addFileOveral:
     handler: lambdas/addFileOverall.post_file
     events:

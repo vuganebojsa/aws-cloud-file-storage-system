@@ -3,32 +3,22 @@ from .responses import *
 import boto3
 import base64
 
-def register_from_invite(event, context):
-    cognito_client = boto3.client('cognito-idp')
-    #info = json.loads(event['body'])
+def check_invitation_status(event, context):
     info = event
     if info is None:
         return get_return('Failed to register user. Missing body.', 400)
     
-    username = info['username']
-    password = info['password']
-    email = info['email']
-    firstName = info['name']
-    lastName = info['surname']
-    dateOfBirth = info['birthDate']
-    inviterEmail = info['inviterEmail']
-    if username is None or password is None or email is None or firstName is None or lastName is None or dateOfBirth is None or inviterEmail is None:
-        return get_return('Failed to register user, invalid params', 400)
+    inviter_email = info['inviter_email']
+    family_email = info['family_email']
+    if inviter_email is None or family_email is None:
+        return get_return('Invitation error.', 400)
     
-    usr = get_user_by_username(username)
-    if usr is not None:
-        return get_return('User with username: ' + username + ' already exists.', 400)
 
     dynamodb = boto3.client('dynamodb')
     resp = dynamodb.get_item(
             TableName='invite-bivuja-table',
             Key={
-                'id': {'S': inviterEmail + '/' + email}
+                'id': {'S': inviter_email + '/' + family_email}
             }
         )
     if 'Item' not in resp:
@@ -38,37 +28,20 @@ def register_from_invite(event, context):
     id_value = item['id']['S'].split('/')[0]
     status_value = item['status']['S']
     res = {'id':id_value, 'status':status_value}
-    if res['status'] != 'pending':
-        return get_return('This request has already been processed.', 400)
+    if res['status'] == 'pending':
+        raise Exception('Status is still pending.')
+    
+    accepted = False
+    if res['status'] == "accepted":
+        accepted = True
+    
+    return {
+        "status": accepted,
+        "inviter_email":inviter_email,
+        "family_email":family_email
+    }
 
-
-    user_attributes = [
-     {'Name': 'given_name', 'Value': firstName},
-    {'Name': 'family_name', 'Value': lastName},
-    {'Name': 'birthdate', 'Value': dateOfBirth},
-    {'Name': 'email', 'Value': email}]
-
-    try:
-        response = cognito_client.admin_create_user(
-            UserPoolId='eu-central-1_JywQCrS95',
-            Username=username,
-            TemporaryPassword=password,
-            UserAttributes=user_attributes,
-            MessageAction='SUPPRESS',
-            DesiredDeliveryMediums=['EMAIL']
-        )
-        resp = cognito_client.admin_set_user_password(
-            UserPoolId='eu-central-1_JywQCrS95',
-            Username=username,
-            Password=password,
-            Permanent=True
-        )
-        send_email(inviterEmail, 'Invited family member has registered. Please confirm.', 'Your family member with the email:' + email + ' has successfully registered!\nPlease confirm his sign up on the link below:\n http://localhost:4200/confirm-invite/' + email)
-        
-        return {'inviter_email':inviterEmail, 'family_email':email}
-    except Exception as e:
-        print(e)
-        return get_return('Failed to register. Invalid attributes. ', 400)
+    
 
 
 
