@@ -39,14 +39,28 @@ stepFunctions:
   stateMachines:
     familyMemberRegistration:
       name: 'familymemberregistration'
+      events:
+        - http:
+            path: send-invite/
+            method: POST
+            request:
+              passThrought: WHEN_NO_MATCH
+            cors: true
+            authorizer: 
+              type: COGNITO_USER_POOLS
+              authorizerId: {Ref: ApiGatewayAuthorizer}
+      # startuje u register member
+      # status je pending
+      # zatim lambda se izvrsava koja proverava npr 2 dana da li je status accepted ili declined
+      # ako nije cekaj 10 sekundi sek pa proveri ponovo
+      # u suprotnom nastavi dalje
+      # ako je acceptovano
+      # funkcija za deljenje fajlova se aktivira i brise se iz tabe
+      # ako nije ne aktivira se i brise se iz tabele i brise se korisnik
       definition:
         Comment: "My Step Function"
-        StartAt: SendInvite
+        StartAt: RegisterMember
         States:
-          SendInvite:
-            Type: Task
-            Resource: arn:aws:lambda:eu-central-1:405601640017:function:awscloudfilestoragesystem-dev-sendInviteToFamilyMember
-            Next: RegisterMember
           RegisterMember:
             Type: Task
             Resource: arn:aws:lambda:eu-central-1:405601640017:function:awscloudfilestoragesystem-dev-registerMemberFromInvite

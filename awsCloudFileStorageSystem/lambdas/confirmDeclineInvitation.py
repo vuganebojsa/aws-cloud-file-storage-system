@@ -120,6 +120,9 @@ def confirm_decline_invitation(event, context):
     res = {'id':id_value, 'status':status_value}
     if res['status'] != 'pending':
         return get_return('This request has already been processed.', 400)
+    
+
+    
     if status == 'accepted':
         # promeniti status u tabeli u accepted
         try:
