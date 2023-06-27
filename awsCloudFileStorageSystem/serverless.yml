@@ -1,0 +1,403 @@
+
+service: awscloudfilestoragesystem
+frameworkVersion: '3'
+
+plugins:
+  - serverless-step-functions
+
+provider:
+  name: aws
+  runtime: python3.9
+  profile: serverlessUser
+  region: eu-central-1
+  stage: dev
+  environment:
+    user_pool_id: { Ref: UserPool }
+    client_id: { Ref: UserClient }
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:*
+        - s3:*
+        - cognito-idp:AdminInitiateAuth
+        - cognito-idp:AdminCreateUser
+        - cognito-idp:AdminUpdateUserAttributes
+        - cognito-idp:AdminSetUserSettings
+        - cognito-idp:AdminDeleteUser
+        - cognito-idp:ListUsers
+        - cognito-idp:AdminSetUserPassword
+        - cognito-idp:AdminConfirmSignUp
+        - sns:Publish 
+        - sns:CreateTopic
+        - sns:Subscribe
+        - ses:*
+        - states:StartExecution
+      Resource: '*'
+
+
+stepFunctions:
+  stateMachines:
+    familyMemberRegistration:
+      name: 'familymemberregistration'
+      events:
+        - http:
+            path: register-from-invite/
+            method: POST
+            request:
+              passThrought: WHEN_NO_MATCH
+            cors: true
+      # startuje u register member
+      # status je pending
+      # zatim lambda se izvrsava koja proverava npr 2 dana da li je status accepted ili declined
+      # ako nije cekaj 10 sekundi sek pa proveri ponovo
+      # u suprotnom nastavi dalje
+      # ako je acceptovano
+      # funkcija za deljenje fajlova se aktivira i brise se iz tabe
+      # ako nije ne aktivira se i brise se iz tabele i brise se korisnik
+      definition:
+        Comment: "My Step Function"
+        StartAt: RegisterMember
+        States:
+          RegisterMember:
+            Type: Task
+            Resource: arn:aws:lambda:eu-central-1:405601640017:function:awscloudfilestoragesystem-dev-registerMemberFromInvite
+            Retry:
+            - ErrorEquals:
+              - States.TaskFailed
+              IntervalSeconds: 5
+              MaxAttempts: 3
+              BackoffRate: 2
+            Next: CheckIfStatusChanged
+          CheckIfStatusChanged:
+            Type: Task
+            Resource: arn:aws:lambda:eu-central-1:405601640017:function:awscloudfilestoragesystem-dev-checkInvitationStatus
+            Retry:
+            - ErrorEquals:
+              - States.TaskFailed
+              IntervalSeconds: 15
+              MaxAttempts: 100
+              BackoffRate: 2
+            Next: CheckIfInvitationAccepted
+          CheckIfInvitationAccepted:
+            Type: Choice
+            Choices: 
+            - Variable: "$.status"
+              BooleanEquals: true
+              Next: ShareFilesToFamilyMember
+            Default: DeleteFamilyMemberFromDatabase
+          ShareFilesToFamilyMember:
+            Type: Task
+            Resource: arn:aws:lambda:eu-central-1:405601640017:function:awscloudfilestoragesystem-dev-shareFilesToFamilyMember
+            End: true
+          DeleteFamilyMemberFromDatabase:
+            Type: Task
+            Resource: arn:aws:lambda:eu-central-1:405601640017:function:awscloudfilestoragesystem-dev-deleteFamilyMemberFromDatabase
+            End: true
+
+functions:
+  getFile:
+    handler: lambdas/getFile.get_file
+    events: 
+      - http:
+          path: get-file/{bucket}/{filename}
+          method: GET
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+  getFiles:
+    handler: lambdas/getFiles.get_files
+    events: 
+      - http:
+          path: get-files/{bucket}/{username}
+          method: GET
+          cors: true 
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+
+  getFolders:
+    handler: lambdas/getFolders.get_folders
+    events: 
+      - http:
+          path: get-folders/{username}
+          method: GET
+          cors: true 
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+  downloadFile:
+    handler: lambdas/downloadFile.download_file
+    events: 
+      - http:
+          path: download_file/{fullpath}
+          method: GET
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true 
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+  shareFile:
+    handler: lambdas/shareFile.share_file
+    events:
+      - http:
+          path: share-file/
+          method: POST
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+          request:
+            passThrought: WHEN_NO_MATCH
+  getSharedFiles:
+    handler: lambdas/getSharedFiles.get_shared_files
+    events:
+      - http:
+          path: get-shared-files/{username}
+          method: GET
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+  getMySharedFilesInfo:
+    handler: lambdas/getMySharedFilesInfo.get_my_shared_files_info
+    events:
+      - http:
+          path: get-my-shared-files-info/{username}
+          method: GET
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+  signupUser:
+    handler: lambdas/register.register_user
+    events:
+      - http:
+          path: user/signup
+          method: POST
+          cors: true
+  moveFile:
+    handler: lambdas/moveFile.move_file
+    events:
+      - http:
+          path: move-file/
+          method: POST
+          cors: true
+          request:
+            passThrought: WHEN_NO_MATCH
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+  stopShareFile:
+    handler: lambdas/stopShareFile.stop_share_file
+    events:
+      - http:
+          path: stop-share-file/{id}
+          method: DELETE
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+  sendInviteToFamilyMember:
+    handler: lambdas/sendInvite.send_invite
+    events:
+      - http:
+          path: send-invite/
+          method: POST
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+
+  registerMemberFromInvite:
+    handler: lambdas/registerFromInvite.register_from_invite
+    # events:
+    #   - http:
+    #       path: register-from-invite/
+    #       method: POST
+    #       request:
+    #         passThrought: WHEN_NO_MATCH
+    #       cors: true
+  confirmDeclineInvitationMember:
+    handler: lambdas/confirmDeclineInvitation.confirm_decline_invitation
+    events:
+      - http:
+          path: confirm-decline-invitation/
+          method: POST
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+  checkInvitationStatus:
+    handler: lambdas/checkInvitationStatus.check_invitation_status
+  shareFilesToFamilyMember:
+    handler: lambdas/shareFilesToFamilyMember.share_files_to_family_member
+  deleteFamilyMemberFromDatabase:
+    handler: lambdas/deleteFamilyMemberFromDatabase.delete_family_member_from_database
+  addFileOveral:
+    handler: lambdas/addFileOverall.post_file
+    events:
+      - http:
+          path: add-file-overall/{bucket}/{filename}
+          method: POST
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+  addFolderOverall:
+    handler: lambdas/postFolderOverall.post_folder
+    events:
+      - http:
+          path: post-folder-overall/
+          method: POST
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+  deleteFileOverall:
+    handler: lambdas/deleteFileOverall.delete_file
+    events:
+      - http:
+          path: delete-file-overall/{bucket}/{username}/{filename}/{id}
+          method: DELETE
+          request:
+            passThrought: WHEN_NO_MATCH
+          cors: true
+          authorizer: 
+             type: COGNITO_USER_POOLS
+             authorizerId: {Ref: ApiGatewayAuthorizer}
+  notifyUser:
+    handler: lambdas.notifyUser.notify
+    events:
+      - sns: MyFileTopic
+
+resources:
+  Resources:
+    StepFunctionCloudWatchLogs:
+      Type: "AWS::Logs::LogGroup"
+      Properties:
+        LogGroupName: "/aws/stepfunctions/familyMemberRegistration"
+        RetentionInDays: 7
+    ApiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: MyApiGateway
+    
+    ApiGatewayAuthorizer: 
+      Type: AWS::ApiGateway::Authorizer
+      Properties: 
+        Name: CognitoUserPool
+        Type: COGNITO_USER_POOLS
+        IdentitySource: method.request.header.Authorization
+        RestApiId: 
+          Ref: ApiGatewayRestApi
+        ProviderARNs: 
+          - Fn::GetAtt:
+              - UserPool
+              - Arn
+
+    BivujaBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: bivuja-bucket
+
+    DynamoDBTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: bivuja-table  # Replace with your DynamoDB table name
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+    DynamoDbFolderTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: folder-bivuja-table  # Replace with your DynamoDB table name
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+    DynamoDbInviteTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: invite-bivuja-table  # Replace with your DynamoDB table name
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+    DynamoDbConsistencyTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: consistency-bivuja-table  # Replace with your DynamoDB table name
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+    DynamoDbContentShareTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: content-share-bivuja-table  # Replace with your DynamoDB table name
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+      
+    UserPool:
+      Type: AWS::Cognito::UserPool
+      Properties:
+        UserPoolName: users
+        Schema:
+          - Name: email
+            Required: true
+            Mutable: true
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 6
+        AutoVerifiedAttributes: ["email"]
+    UserClient:
+      Type: AWS::Cognito::UserPoolClient
+      Properties:
+        ClientName: user-pool-ui
+        GenerateSecret: false
+        UserPoolId: { Ref: UserPool }
+        AccessTokenValidity: 5
+        IdTokenValidity: 5
+        ExplicitAuthFlows:
+          - ADMIN_NO_SRP_AUTH
+
