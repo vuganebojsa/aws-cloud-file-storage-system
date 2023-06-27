@@ -45,7 +45,8 @@ def send_invite(event, context):
         send_email(info_dict['familyMember'], 'You have been invited to join our file storage app!', 'Click on the link below and register yourself!\n http://localhost:4200/register-from-invite/')
         return get_return('Invite sent successfully!', 200)
     except Exception as e:
-        return get_return('Failed to send invite to user. Key error ' + e, 400)
+        print(e)
+        return get_return('Failed to send invite to user. Key error ', 400)
     
 
 
