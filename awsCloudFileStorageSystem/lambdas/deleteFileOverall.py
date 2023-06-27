@@ -137,7 +137,6 @@ def delete_from_dynamo(event):
     retval = save_item_to_destination_table(item_to_save)
     if retval is not None:
         return get_return('Invalid file id. Please try again.', 400)
-    
     dynamodb = boto3.client('dynamodb')
     try:
         dynamodb.delete_item(
@@ -148,6 +147,8 @@ def delete_from_dynamo(event):
         )
     except Exception as e:
        return get_return('Failed to delete file from dynamo', 500)
+    delete_from_shared(item_to_save)
+
     return None
 
 def delete_from_s3(event):
