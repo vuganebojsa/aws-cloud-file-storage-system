@@ -32,24 +32,31 @@ def delete_from_consistency(item_id):
        return get_return('Something went wrong. Key error.', 400)
 
 def delete_from_shared(item):
+    print(item['username'])
+    print(item['folderName'] + '/' + item['filename'])
+    if item['folderName'] != '':
+        filename = item['folderName'] + '/' + item['filename']
+    else:
+        filename = item['filename']
     table = dynamodb.Table('content-share-bivuja-table')
     response = table.scan(
        FilterExpression='#usr = :giver and #pth = :pthh',
         ExpressionAttributeValues={
             ':giver': item['username'],
-            ':pthh': item['folderName'] + '/' + item['filename']
+            ':pthh': filename
         },
         ExpressionAttributeNames={
             '#usr': 'giver',
             '#pth': 'path'
         }
     )
-
+    print(response)
     items = response['Items']
+    print(items)
     if len(items) > 0:
-        dynamodb = boto3.client('dynamodb')
+        dbcl = boto3.client('dynamodb')
         for i in items:
-            response = dynamodb.delete_item(
+            response = dbcl.delete_item(
                 TableName='content-share-bivuja-table',
                 Key={
                     'id': {'S': i['id']},
